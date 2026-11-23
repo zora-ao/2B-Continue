@@ -6,10 +6,10 @@ import Placeholder from "@/pages/Placeholder";
 
 export default function App() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col md:flex-row">
       <Sidebar />
 
-      <main className="min-w-0 flex-1 p-8">
+      <main className="min-w-0 flex-1 p-4 md:p-8">
         <Routes>
           <Route path="/" element={<Placeholder title="Dashboard" />} />
           <Route path="/budget" element={<BudgetPage />} />

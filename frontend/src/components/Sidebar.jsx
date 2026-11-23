@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Bell, LayoutDashboard, Plug, Sun, Wallet, Zap } from "lucide-react";
+import { Bell, LayoutDashboard, Menu, Plug, Sun, Wallet, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -10,34 +11,73 @@ const LINKS = [
   { to: "/alerts", label: "Alerts", icon: Bell },
 ];
 
-export default function Sidebar() {
+function Logo() {
   return (
-    <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7">
-      <div className="mb-6 flex items-center gap-2.5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Zap className="size-[18px]" />
-        </div>
-        <span className="font-heading text-xl font-medium">EnergyWise</span>
+    <div className="flex items-center gap-2.5">
+      <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <Zap className="size-[18px]" />
       </div>
+      <span className="font-heading text-xl font-medium">EnergyWise</span>
+    </div>
+  );
+}
 
-      {LINKS.map(({ to, label, icon: LinkIcon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === "/"}
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition",
-              isActive
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          <LinkIcon className="size-5" />
-          {label}
-        </NavLink>
-      ))}
-    </aside>
+function NavLinks({ onNavigate }) {
+  return LINKS.map(({ to, label, icon: LinkIcon }) => (
+    <NavLink
+      key={to}
+      to={to}
+      end={to === "/"}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition",
+          isActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:text-foreground",
+        )
+      }
+    >
+      <LinkIcon className="size-5" />
+      {label}
+    </NavLink>
+  ));
+}
+
+export default function Sidebar() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile: compact top bar with a toggle menu */}
+      <header className="sticky top-0 z-20 border-b border-sidebar-border bg-sidebar md:hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Logo />
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:text-foreground"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
+        {open && (
+          <nav id="mobile-nav" className="flex flex-col gap-1.5 px-4 pb-4">
+            <NavLinks onNavigate={() => setOpen(false)} />
+          </nav>
+        )}
+      </header>
+
+      {/* Desktop: full sidebar */}
+      <aside className="hidden w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7 md:flex">
+        <div className="mb-6">
+          <Logo />
+        </div>
+        <NavLinks />
+      </aside>
+    </>
   );
 }
