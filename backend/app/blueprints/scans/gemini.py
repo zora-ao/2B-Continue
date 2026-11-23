@@ -103,6 +103,7 @@ def read_rating_label(photo):
             "x-goog-api-key": current_app.config["GEMINI_API_KEY"],
         },
     )
+    
     try:
         with urlopen(req, timeout=15) as response:
             payload = json.load(response)

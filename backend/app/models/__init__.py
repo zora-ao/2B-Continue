@@ -1,6 +1,7 @@
 from .user import User
 from .refresh_token import RefreshToken
 from .household import Household
+from .household_sharing import HouseholdInvite, HouseholdJoinLimit, HouseholdMember
 from .appliance import Appliance
 from .budget_plan import BudgetPlan
 from .energy_log import MeterReading, SolarGeneration

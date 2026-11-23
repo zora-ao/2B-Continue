@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/api";
 import HouseholdDialog from "@/components/HouseholdDialog";
+import HouseholdSharingDialog from "@/components/HouseholdSharingDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 const SAVED_HOUSEHOLD_KEY = "energywise.householdId";
 const HouseholdsContext = createContext(null);
@@ -8,12 +10,14 @@ const HouseholdsContext = createContext(null);
 // One list of households for every page, plus the dialog that adds one.
 // The dialog opens by itself when there are none yet.
 export function HouseholdsProvider({ children }) {
+  const { user } = useAuth();
   const [households, setHouseholds] = useState([]);
   const [householdId, setHouseholdId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [sharing, setSharing] = useState(null);
   // The button that opened the dialog, so focus can go back to it. None when it opened by itself.
   const opener = useRef(null);
 
@@ -53,9 +57,16 @@ export function HouseholdsProvider({ children }) {
   }, [householdId]);
 
   function handleCreated(household) {
-    setHouseholds((items) => [...items, household]);
+    setHouseholds((items) => items.some((item) => item.id === household.id) ? items : [...items, household]);
     setHouseholdId(String(household.id));
     setSetupOpen(false);
+    setSharing(null);
+  }
+
+  function openJoin() {
+    opener.current = document.activeElement;
+    setSetupOpen(false);
+    setSharing({ mode: "join" });
   }
 
   const value = {
@@ -69,6 +80,11 @@ export function HouseholdsProvider({ children }) {
       opener.current = document.activeElement;
       setSetupOpen(true);
     },
+    openJoin: user.isGuest ? null : openJoin,
+    openShare: user.isGuest ? null : (household) => {
+      opener.current = document.activeElement;
+      setSharing({ mode: "share", household });
+    },
   };
 
   return (
@@ -80,7 +96,16 @@ export function HouseholdsProvider({ children }) {
         first={households.length === 0}
         opener={opener}
         onCreated={handleCreated}
+        onJoin={user.isGuest ? null : openJoin}
       />
+      {sharing && (
+        <HouseholdSharingDialog
+          {...sharing}
+          onClose={() => setSharing(null)}
+          onJoined={handleCreated}
+          opener={opener}
+        />
+      )}
     </HouseholdsContext.Provider>
   );
 }

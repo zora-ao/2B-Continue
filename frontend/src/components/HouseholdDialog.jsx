@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // Asks for a household's name, electricity rate and monthly budget.
-export default function HouseholdDialog({ open, onOpenChange, first, opener, onCreated }) {
+export default function HouseholdDialog({ open, onOpenChange, first, opener, onCreated, onJoin }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // There's no DialogTrigger (the dialog can open by itself), so Radix can't return focus.
@@ -84,6 +84,7 @@ export default function HouseholdDialog({ open, onOpenChange, first, opener, onC
             </div>
             {error && <p role="alert" className="text-sm text-danger">{error}</p>}
             <DialogFooter>
+              {onJoin && <Button type="button" variant="outline" onClick={onJoin}>Join with PIN</Button>}
               <Button type="submit">{busy ? "Saving..." : "Save household"}</Button>
             </DialogFooter>
           </fieldset>

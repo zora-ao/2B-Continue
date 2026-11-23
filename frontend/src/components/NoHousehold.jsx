@@ -4,7 +4,7 @@ import { useHouseholds } from "@/hooks/useHouseholds";
 
 // Shown on a page when there is no household to load yet.
 export default function NoHousehold() {
-  const { openSetup } = useHouseholds();
+  const { openSetup, openJoin } = useHouseholds();
 
   return (
     <div className="flex flex-col items-start gap-3 rounded-xl border border-border p-6">
@@ -12,10 +12,13 @@ export default function NoHousehold() {
       <p className="text-sm text-muted-foreground">
         Add your household and its electricity rate to get started.
       </p>
-      <Button onClick={openSetup}>
-        <Home />
-        Set up household
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={openSetup}>
+          <Home />
+          Set up household
+        </Button>
+        {openJoin && <Button variant="outline" onClick={openJoin}>Join with PIN</Button>}
+      </div>
     </div>
   );
 }

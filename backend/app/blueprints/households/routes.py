@@ -4,6 +4,8 @@ from flask import g, jsonify
 from sqlalchemy import select
 
 from . import households_bp
+from .sharing import issue_invite, redeem_invite
+from ..auth.guard import household_access
 from ...errors import ValidationError, json_payload
 from ...extensions import db
 from ...models import Household
@@ -11,13 +13,14 @@ from ...models import Household
 
 def serialize(household):
     return {"id": household.id, "name": household.name,
+            "is_owner": household.user_id == g.user.id,
             "electricity_rate": float(household.electricity_rate),
             "monthly_budget": float(household.monthly_budget)}
 
 
 @households_bp.get("")
 def list_households():
-    households = db.session.scalars(select(Household).where(Household.user_id == g.user.id)
+    households = db.session.scalars(select(Household).where(household_access(g.user.id))
                                     .order_by(Household.id)).all()
     return jsonify(items=[serialize(h) for h in households])
 
@@ -47,3 +50,21 @@ def create_household():
     db.session.add(household)
     db.session.commit()
     return jsonify(item=serialize(household)), 201
+
+
+@households_bp.post("/<int:household_id>/invites")
+def create_invite(household_id):
+    if g.user.is_guest:
+        return jsonify(error="Sign in to share a household."), 403
+    return issue_invite(household_id, g.user.id)
+
+
+@households_bp.post("/join")
+def join_household():
+    if g.user.is_guest:
+        return jsonify(error="Sign in to join a household."), 403
+    household, error = redeem_invite(g.user.id, json_payload().get("pin"))
+    if error:
+        message, status = error
+        return jsonify(error=message), status
+    return jsonify(item=serialize(household))
