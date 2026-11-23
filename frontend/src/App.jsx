@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import RequireAuth from "@/components/RequireAuth";
+import AppShell from "@/components/AppShell";
 import AlertsPage from "@/pages/Alerts/AlertsPage";
 import AppliancesPage from "@/pages/Appliances/AppliancesPage";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -24,7 +24,7 @@ export default function App() {
         }
       />
 
-      <Route element={<RequireAuth />}>
+      <Route element={<AppShell />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/appliances" element={<AppliancesPage />} />

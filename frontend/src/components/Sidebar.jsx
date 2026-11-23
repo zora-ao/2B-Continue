@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { Bell, LayoutDashboard, LogOut, Menu, Plug, Sun, Wallet, X } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,16 +35,42 @@ function NavLinks({ onNavigate }) {
   ));
 }
 
+const AUTH_LINK =
+  "flex flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
+
+// Guests can log in or create an account from here; their data comes with them.
+function GuestMenu() {
+  const location = useLocation();
+  const from = { from: location };
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
+      <div>
+        <p className="text-sm font-medium">Guest</p>
+        <p className="text-xs text-muted-foreground">Create an account to keep your data.</p>
+      </div>
+      <div className="flex gap-2">
+        <Link to="/login" state={from} className={`${AUTH_LINK} border border-border hover:bg-muted`}>
+          Log in
+        </Link>
+        <Link to="/register" state={from} className={`${AUTH_LINK} bg-primary text-primary-foreground hover:bg-primary/90`}>
+          Create account
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function UserMenu() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [error, setError] = useState("");
+
+  if (user.isGuest) return <GuestMenu />;
 
   async function handleLogout() {
     setError("");
     try {
       await logout();
-      navigate("/login", { replace: true });
     } catch {
       setError("Couldn't log out. Check your connection and try again.");
     }
@@ -58,7 +84,7 @@ function UserMenu() {
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-sm font-medium">{user?.name}</p>
+        <p className="min-w-0 truncate text-sm font-medium">{user.name}</p>
         <button
           type="button"
           onClick={handleLogout}
