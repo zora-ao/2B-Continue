@@ -39,8 +39,9 @@ function CardTitle({
   className,
   ...props
 }) {
+  // A real heading so screen-reader users can jump between cards (pages use h1, cards h2).
   return (
-    <div
+    <h2
       data-slot="card-title"
       className={cn(
         "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",

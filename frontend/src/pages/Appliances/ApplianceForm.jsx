@@ -48,6 +48,9 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
     if (busy) return;
     const result = parseApplianceForm(form);
     setErrors(result.errors);
+    // Move focus to the first field that needs fixing.
+    const firstInvalid = ["name", "watts", "hoursPerDay", "quantity"].find((field) => result.errors[field]);
+    if (firstInvalid) document.getElementById(firstInvalid)?.focus();
     if (result.appliance) {
       if (await onSubmit(result.appliance)) {
         setForm(EMPTY_FORM);
@@ -77,6 +80,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                 placeholder="e.g. Bedroom aircon"
                 value={form.name}
                 aria-invalid={Boolean(errors.name)}
+                  aria-describedby={errors.name ? "name-error" : undefined}
                 onChange={(event) => updateField("name", event.target.value)}
               />
             </Field>
@@ -105,6 +109,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                   placeholder="900"
                   value={form.watts}
                   aria-invalid={Boolean(errors.watts)}
+                  aria-describedby={errors.watts ? "watts-error" : undefined}
                   onChange={(event) => updateField("watts", event.target.value)}
                 />
               </Field>
@@ -119,6 +124,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                   placeholder="4"
                   value={form.hoursPerDay}
                   aria-invalid={Boolean(errors.hoursPerDay)}
+                  aria-describedby={errors.hoursPerDay ? "hoursPerDay-error" : undefined}
                   onChange={(event) => updateField("hoursPerDay", event.target.value)}
                 />
               </Field>
@@ -132,6 +138,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                 step="1"
                 value={form.quantity}
                 aria-invalid={Boolean(errors.quantity)}
+                  aria-describedby={errors.quantity ? "quantity-error" : undefined}
                 onChange={(event) => updateField("quantity", event.target.value)}
               />
             </Field>
@@ -173,7 +180,11 @@ function Field({ id, label, error, children }) {
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

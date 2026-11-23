@@ -10,9 +10,15 @@ import SolarPage from "@/pages/Solar/SolarPage";
 export default function App() {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
 
-      <main className="min-w-0 flex-1 p-4 md:p-8">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 p-4 outline-none md:p-8">
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/budget" element={<BudgetPage />} />

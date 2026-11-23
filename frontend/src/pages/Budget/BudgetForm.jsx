@@ -40,10 +40,11 @@ export default function BudgetForm({
             className="h-12 text-xl font-semibold"
             value={budget}
             aria-invalid={!isValidBudget}
+            aria-describedby={isValidBudget ? undefined : "budget-error"}
             onChange={(event) => onBudgetChange(event.target.value)}
           />
           {!isValidBudget && (
-            <p className="text-sm text-danger">Enter a budget of ₱0 or more (up to 2 decimals)</p>
+            <p id="budget-error" className="text-sm text-danger">Enter a budget of ₱0 or more (up to 2 decimals)</p>
           )}
         </div>
 
@@ -71,11 +72,12 @@ export default function BudgetForm({
 
         <div className="flex flex-col gap-3">
           <h3 className="font-heading text-lg">2. Plan style</h3>
-          <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1">
+          <div role="group" aria-label="Plan style" className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1">
             {PLAN_STYLES.map((option) => (
               <Button
                 key={option.value}
                 type="button"
+                aria-pressed={style === option.value}
                 variant={style === option.value ? "default" : "ghost"}
                 className={cn(style !== option.value && "text-muted-foreground")}
                 onClick={() => onStyleChange(option.value)}
