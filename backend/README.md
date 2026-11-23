@@ -12,11 +12,12 @@ Nothing else changes.
 | --- | --- | --- | --- | --- |
 | POST | `/register` | `{"name", "email", "password"}` | 201, tokens issued | 400 invalid, 409 email taken |
 | POST | `/login` | `{"email", "password"}` | 200, tokens issued | 400 invalid body, 401 wrong email/password, 429 locked |
+| POST | `/guest` | nothing | 201, tokens for a new guest | — |
 | POST | `/refresh` | the refresh token | 200, new tokens issued | 401 log in again, 409 already refreshed |
 | POST | `/logout` | the refresh token (optional) | 204 | never fails |
 | GET | `/me` | the access token | 200 `{"user"}` | 401 |
 
-`user` is `{"id", "name", "email"}`. Emails are trimmed and lowercased; names are
+`user` is `{"id", "name", "email", "is_guest"}` (`name` and `email` are `null` for guests). Emails are trimmed and lowercased; names are
 1-120 characters; passwords are 8-128 characters and stored as Werkzeug scrypt
 hashes. Five wrong passwords lock the account for 15 minutes (429), even for the
 right password; a successful login resets the count.
@@ -45,6 +46,27 @@ header is needed.
 On `/refresh` and `/logout` the reply follows how the token arrived (cookie in,
 cookies out; Bearer in, JSON out), and `X-Client` is ignored there.
 
+**Guest mode (login is optional).** People can use every feature without an
+account:
+- **First visit, or after logout:** the app calls `POST /guest` when it has no
+  login. That creates a private guest account (a user with no name, email or
+  password) and logs it in with the usual tokens.
+- **Register while a guest:** turns that same guest into a real account (200
+  instead of 201) and keeps all its households.
+- **Login while a guest:** moves the guest's households into the account and
+  removes the guest.
+- **Idle guests:** register and login still recognise a guest whose access token
+  has expired, so data isn't lost. A web guest needs `X-CSRF-TOKEN` there, as
+  usual.
+- **Reply format:** a guest recognised from a cookie always gets cookies back,
+  whatever `X-Client` says.
+- **Cleanup:** a guest with no usable refresh token (30 days unused, or logged
+  out) is abandoned. Each `/guest` call deletes up to 50 of them, with their
+  households.
+- **Guest logout:** a guest who logs out has no way back in, so the UI should
+  hide **Log out** for guests (offer "Create an account to keep your data") and
+  show a "You're using EnergyWise as a guest" note.
+
 **Client rule.** On a 401, call `/refresh` once, then retry the original request.
 - If refresh returns 401, show the login screen.
 - If refresh returns 409 (another tab or retry already refreshed in the last 30
@@ -67,7 +89,7 @@ Render generates one (`render.yaml`) if the service is managed by the Blueprint;
 otherwise set it by hand.
 
 **Everything else requires login.** Every `/api` request except register, login,
-refresh, logout, and `/api/health` returns 401 `{"error": "Please log in."}`
+guest, refresh, logout, and `/api/health` returns 401 `{"error": "Please log in."}`
 without a valid access token. A `household_id` in the URL that isn't the user's returns 404, so
 other users' ids can't be probed. `GET /api/households` lists only the user's
 households, and `POST /api/households` makes the new one theirs.

@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth_bp
-from .guests import create_guest, delete_abandoned_guests
+from .guests import create_guest, delete_abandoned_guests, merge_guest_into, recognise_guest
 from .tokens import (REFRESH_GRACE, issue_tokens, prune_refresh_tokens, serialize_user,
                      token_response, wants_mobile)
 from .validation import normalize_email, validate_login, validate_registration
@@ -27,17 +27,26 @@ DUMMY_HASH = generate_password_hash("not-a-real-password")
 @auth_bp.post("/register")
 def register():
     values = validate_registration(json_payload())
-    user = User(name=values["name"], email=values["email"],
-                password_hash=generate_password_hash(values["password"]))
-    db.session.add(user)
+    password_hash = generate_password_hash(values["password"])
+    guest, location = recognise_guest()
+    if guest is not None:
+        guest.name, guest.email, guest.password_hash = values["name"], values["email"], password_hash
+        user, status, mobile = guest, 200, location == "headers"
+    else:
+        user = User(name=values["name"], email=values["email"], password_hash=password_hash)
+        db.session.add(user)
+        status, mobile = 201, wants_mobile()
     try:
-        db.session.commit()
+        db.session.flush()
     except IntegrityError:
         db.session.rollback()
         return jsonify(error="An account with this email already exists."), 409
+    if guest is not None:
+        # The old guest session ends; only the tokens issued below stay valid.
+        db.session.execute(delete(RefreshToken).where(RefreshToken.user_id == user.id))
     access, refresh = issue_tokens(user)
     db.session.commit()
-    return token_response(user, access, refresh, mobile=wants_mobile(), status=201)
+    return token_response(user, access, refresh, mobile=mobile, status=status)
 
 
 @auth_bp.post("/login")
@@ -65,10 +74,14 @@ def login():
         return jsonify(error="Email or password is incorrect."), 401
     user.failed_login_count = 0
     user.locked_until = None
+    guest, location = recognise_guest()
+    if guest is not None and guest.id != user.id:
+        merge_guest_into(guest, user)
+    mobile = location == "headers" if guest is not None else wants_mobile()
     prune_refresh_tokens(user.id)
     access, refresh = issue_tokens(user)
     db.session.commit()
-    return token_response(user, access, refresh, mobile=wants_mobile())
+    return token_response(user, access, refresh, mobile=mobile)
 
 
 @auth_bp.post("/guest")

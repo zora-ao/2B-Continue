@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, exists, select
+from flask import current_app, request
+from flask_jwt_extended import decode_token
+from flask_jwt_extended.exceptions import JWTExtendedException
+from jwt.exceptions import PyJWTError
+from sqlalchemy import delete, exists, select, update
 
 from ...extensions import db
 from ...models import Appliance, Household, RefreshToken, User
@@ -31,3 +35,37 @@ def delete_abandoned_guests(limit=GUEST_CLEANUP_BATCH):
     db.session.execute(delete(Household).where(Household.user_id.in_(guest_ids)))
     db.session.execute(delete(User).where(User.id.in_(guest_ids), User.email.is_(None)))
     return len(guest_ids)
+
+
+def _read_access_token():
+    cookie = request.cookies.get(current_app.config["JWT_ACCESS_COOKIE_NAME"])
+    if cookie:
+        csrf = request.headers.get(current_app.config["JWT_ACCESS_CSRF_HEADER_NAME"])
+        # decode_token skips the CSRF check when no value is given, so a missing header means no guest.
+        return (cookie, csrf, "cookies") if csrf else (None, None, None)
+    scheme, _, value = request.headers.get("Authorization", "").partition(" ")
+    if scheme == "Bearer" and value:
+        return value, None, "headers"
+    return None, None, None
+
+
+def recognise_guest():
+    token, csrf, location = _read_access_token()
+    if token is None:
+        return None, None
+    try:
+        claims = decode_token(token, csrf_value=csrf, allow_expired=True)
+        if claims["type"] != "access":
+            return None, None
+        user = db.session.get(User, int(claims["sub"]))
+    except (JWTExtendedException, PyJWTError, ValueError, KeyError):
+        return None, None
+    if user is None or not user.is_guest:
+        return None, None
+    return user, location
+
+
+def merge_guest_into(guest, account):
+    db.session.execute(update(Household).where(Household.user_id == guest.id)
+                       .values(user_id=account.id))
+    db.session.execute(delete(User).where(User.id == guest.id, User.email.is_(None)))
