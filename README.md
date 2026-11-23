@@ -1,16 +1,33 @@
+<div align="center">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/kuryenta-logo-white.svg">
-  <img src="docs/assets/kuryenta-logo-navy.svg" alt="Kuryenta" width="360">
+  <img src="docs/assets/kuryenta-logo-navy.svg" alt="Kuryenta" width="420">
 </picture>
 
-**Alamin ang gastos bago dumating ang bill.**
-*Know the cost before the bill arrives.*
+<h3>Alamin ang gastos bago dumating ang bill.</h3>
 
-Kuryenta is a household energy-saving web app built around **SDG 7: Affordable and Clean Energy**. Log your meter readings, see what each appliance costs to run, plan your daily usage against a peso budget, and find out whether solar fits your home, all before the bill arrives.
+<p><i>Know the cost before the bill arrives.</i></p>
 
-`React 19` · `Vite 7` · `Tailwind CSS v4` · `shadcn/ui` · `Flask 3` · `SQLAlchemy 2` · `PostgreSQL (Supabase)` · `Vercel` · `Render`
+<p>Log meter readings, see what each appliance costs to run, plan your day against a peso budget,<br>and find out if solar fits your home, all before the bill arrives.</p>
 
-[Features](#features) · [How it works](#how-it-works) · [Getting started](#getting-started) · [API](#api) · [Deployment](#deployment)
+<img alt="SDG 7: Clean Energy" src="https://img.shields.io/badge/SDG_7-Clean_Energy-FFC857?labelColor=151526">
+<img alt="React 19" src="https://img.shields.io/badge/React-19-FFC857?logo=react&labelColor=151526">
+<img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-FFC857?logo=vite&labelColor=151526">
+<img alt="Tailwind CSS v4" src="https://img.shields.io/badge/Tailwind_CSS-v4-FFC857?logo=tailwindcss&labelColor=151526">
+<img alt="Flask 3" src="https://img.shields.io/badge/Flask-3-FFC857?logo=flask&labelColor=151526">
+<img alt="Postgres on Supabase" src="https://img.shields.io/badge/Postgres-Supabase-FFC857?logo=supabase&labelColor=151526">
+<img alt="Hosted on Vercel and Render" src="https://img.shields.io/badge/Hosting-Vercel_%2B_Render-FFC857?logo=vercel&labelColor=151526">
+
+<p>
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#getting-started">Getting started</a> ·
+  <a href="#api">API</a> ·
+  <a href="#deployment">Deployment</a>
+</p>
+
+</div>
 
 > [!IMPORTANT]
 > Every number Kuryenta shows is an **estimate built from what you type in**: appliance wattage, hours of use, meter readings and your electricity rate. It is not connected to a smart meter or to your utility. Solar prices and sun-hours are indicative values, not quotes.
