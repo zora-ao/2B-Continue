@@ -14,3 +14,8 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Claude Code (local only; skills and agents are shared)
+.claude/worktrees/
+.claude/launch.json
+.claude/settings.local.json
