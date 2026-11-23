@@ -1,0 +1,21 @@
+# Render blueprint for the EnergyWise Flask API.
+# In Render: New > Blueprint > pick this repo. It asks for DATABASE_URL once.
+services:
+  - type: web
+    name: energywise-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Apply database migrations, then start the production server.
+    startCommand: flask --app app.py db upgrade && gunicorn --bind 0.0.0.0:$PORT app:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: FLASK_DEBUG
+        value: "0"
+      # Supabase connection string. Use the "Session pooler" one from
+      # Supabase > Connect: Render can't reach the direct (IPv6) address.
+      - key: DATABASE_URL
+        sync: false
