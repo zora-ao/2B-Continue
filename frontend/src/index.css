@@ -1,11 +1,37 @@
-:root {
-  font-family: system-ui, sans-serif;
-  color-scheme: light dark;
+@import "tailwindcss";
+
+/* Colors and fonts copied from the Figma "EnergyWise Colors" tokens.
+   Each --color-* becomes a Tailwind class, e.g. --color-surface → bg-surface. */
+@theme {
+  --color-base: #0a1020;
+  --color-surface: #111a2e;
+  --color-raised: #18233b;
+  --color-line: #25324d;
+
+  --color-ink: #e8eef8;
+  --color-muted: #8b98b3;
+  --color-on-accent: #04140d;
+
+  --color-green: #22e39b;
+  --color-green-soft: #0f3b2e;
+  --color-yellow: #facc15;
+  --color-yellow-soft: #3a3212;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #3b2a0c;
+  --color-danger: #f43f5e;
+  --color-danger-soft: #3d1220;
+  --color-info: #38bdf8;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "DM Sans", sans-serif;
 }
-body { margin: 0; }
-.container { max-width: 640px; margin: 3rem auto; padding: 0 1rem; }
-form { display: flex; gap: 0.5rem; }
-input { flex: 1; padding: 0.5rem; }
-button { padding: 0.5rem 1rem; cursor: pointer; }
-.ok { color: #16a34a; font-weight: 600; }
-.bad { color: #dc2626; font-weight: 600; }
+
+body {
+  @apply bg-base font-body text-ink antialiased;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-display;
+}
