@@ -1,15 +1,19 @@
 // The API uses snake_case; the app uses camelCase. Only this file converts between them.
 async function request(path, options = {}) {
+  // FormData (photo uploads) must let the browser set its own multipart header.
+  const jsonHeader = options.body instanceof FormData ? {} : { "Content-Type": "application/json" };
   const response = await fetch(`/api${path}`, {
     ...options,
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: { ...jsonHeader, ...options.headers },
   });
   if (response.status === 204) {
     return null; // e.g. after DELETE: success, nothing to read
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(data?.error || `Request failed: ${response.status}`);
+    const error = new Error(data?.error || `Request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   if (!data) {
     throw new Error("The server returned an invalid response.");
@@ -229,6 +233,18 @@ function fromSolarProfile(profile) {
   };
 }
 
+const scanSessionPath = (code) => `/scan-sessions/${encodeURIComponent(code)}`;
+
+function photoForm(photo) {
+  const form = new FormData();
+  form.append("photo", photo, "label.jpg");
+  return form;
+}
+
+function fromScanSession(session) {
+  return { code: session.code, expiresAt: session.expires_at };
+}
+
 export const api = {
   health: () => request("/health"),
   listHouseholds: () => request("/households"),
@@ -344,4 +360,12 @@ export const api = {
       method: "PATCH", body: JSON.stringify(changes),
     }));
   },
+
+  // Scanning a rating label: the server's vision model returns { name, type, watts }.
+  readLabel: (photo) => request("/scans/read", { method: "POST", body: photoForm(photo) }),
+  startScanSession: async () => fromScanSession(await request("/scan-sessions", { method: "POST", body: "{}" })),
+  getScanSession: (code, options) => request(scanSessionPath(code), options),
+  sendScanPhoto: (code, photo) => request(`${scanSessionPath(code)}/photo`, {
+    method: "POST", body: photoForm(photo),
+  }),
 };
