@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://energywise-api.onrender.com/api/:path*"
+      "destination": "https://twob-continue.onrender.com/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
