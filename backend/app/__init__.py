@@ -8,6 +8,7 @@ from flask_cors import CORS
 from .blueprints.api.routes import api
 from .blueprints.appliances import appliances_bp
 from .blueprints.households import households_bp
+from .blueprints.planning import planning_bp
 from .errors import register_error_handlers
 from .extensions import db, migrate
 
@@ -30,7 +31,7 @@ def create_app(test_config=None) -> Flask:
         app.config.update(test_config)
 
     db.init_app(app)
-    from . import models  # Register all models for migrations.
+    from . import models  
     migrate.init_app(app, db, directory=str(Path(__file__).resolve().parents[1] / "migrations"))
 
     register_error_handlers(app)
@@ -42,4 +43,5 @@ def create_app(test_config=None) -> Flask:
     app.register_blueprint(api, url_prefix="/api")
     app.register_blueprint(appliances_bp, url_prefix="/api/households/<int:household_id>/appliances")
     app.register_blueprint(households_bp, url_prefix="/api/households")
+    app.register_blueprint(planning_bp, url_prefix="/api/households/<int:household_id>/budget-planner")
     return app
