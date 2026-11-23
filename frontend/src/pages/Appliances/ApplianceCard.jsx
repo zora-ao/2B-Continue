@@ -5,11 +5,9 @@ import { Card } from "@/components/ui/card";
 import { getTypeIcon } from "@/lib/appliances";
 import { formatKwh, formatPeso } from "@/lib/energy";
 
-// The monthly kWh and cost come from the server (estimatedMonthlyKwh / Cost).
 export default function ApplianceCard({ appliance, onEdit, onDelete, busy }) {
   const TypeIcon = getTypeIcon(appliance.type);
 
-  // "900 W · 4 h/day", or "5 × 9 W · 5 h/day" when there is more than one.
   let usage = `${appliance.watts} W · ${appliance.hoursPerDay} h/day`;
   if (appliance.quantity > 1) {
     usage = `${appliance.quantity} × ${usage}`;
@@ -17,7 +15,6 @@ export default function ApplianceCard({ appliance, onEdit, onDelete, busy }) {
 
   return (
     <Card className="gap-4 p-5">
-      {/* Top row: icon, name and usage, action buttons */}
       <div className="flex items-start gap-3">
         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
           <TypeIcon className="size-5" />
@@ -54,7 +51,6 @@ export default function ApplianceCard({ appliance, onEdit, onDelete, busy }) {
         </div>
       </div>
 
-      {/* Bottom row: monthly estimate */}
       <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
         <span className="text-muted-foreground">Monthly estimate</span>
         <span className="font-heading font-semibold">

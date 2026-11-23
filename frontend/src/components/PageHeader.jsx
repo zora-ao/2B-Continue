@@ -1,5 +1,3 @@
-// The big title (and optional subtitle) at the top of every page.
-// `actions` (optional) shows buttons on the right, e.g. Save.
 export default function PageHeader({ title, subtitle, actions }) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">

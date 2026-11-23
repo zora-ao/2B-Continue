@@ -20,21 +20,15 @@ import {
 } from "@/lib/appliances";
 import { dailyKwh, formatKwh, formatPeso, monthlyCost } from "@/lib/energy";
 
-// Add or edit one appliance.
-//   editing  – the appliance being edited, or null when adding a new one
-//   onSubmit – called with the checked appliance data
-//   onCancel – called when the user stops editing
 export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate, days }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
-  // When the user clicks Edit on a card, load that appliance into the form.
   useEffect(() => {
     setForm(editing ? applianceToForm(editing) : EMPTY_FORM);
     setErrors({});
   }, [editing]);
 
-  // Updates one field, e.g. updateField("watts", "900").
   function updateField(field, value) {
     setForm({ ...form, [field]: value });
   }
@@ -49,7 +43,6 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
     }
   }
 
-  // Live preview: only shown once the numbers are valid.
   const preview = parseApplianceForm(form).appliance;
 
   return (
@@ -166,7 +159,6 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
   );
 }
 
-// A label, the input, and the error message under it.
 function Field({ id, label, error, children }) {
   return (
     <div className="flex flex-col gap-1.5">

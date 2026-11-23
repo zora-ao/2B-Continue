@@ -1,8 +1,5 @@
-// Everything about an appliance that isn't UI:
-// the list of types, and turning form text into a saved appliance.
 import { AirVent, Fan, Lightbulb, Plug, Refrigerator, Tv } from "lucide-react";
 
-// To add a new type, add one line here.
 export const APPLIANCE_TYPES = [
   { value: "aircon", label: "Aircon", icon: AirVent },
   { value: "refrigerator", label: "Refrigerator", icon: Refrigerator },
@@ -17,7 +14,6 @@ export function getTypeIcon(type) {
   return found ? found.icon : Plug;
 }
 
-// What the form shows when it's empty. Inputs always hold text.
 export const EMPTY_FORM = {
   name: "",
   type: "other",
@@ -27,9 +23,6 @@ export const EMPTY_FORM = {
   isMustHave: false,
 };
 
-// Checks the form and returns { appliance, errors }.
-//   valid:   appliance is ready to save, errors is {}
-//   invalid: appliance is null, errors has a message per field
 export function parseApplianceForm(form) {
   const name = form.name.trim();
   const watts = toNumber(form.watts);
@@ -65,7 +58,6 @@ export function parseApplianceForm(form) {
   return { appliance, errors };
 }
 
-// Turns a saved appliance back into form text, for editing.
 export function applianceToForm(appliance) {
   return {
     name: appliance.name,
@@ -77,7 +69,7 @@ export function applianceToForm(appliance) {
   };
 }
 
-// "900" → 900, "abc" → NaN, "" → NaN (a blank box is not 0).
+// A blank box is NaN, not 0.
 function toNumber(text) {
   if (text.trim() === "") {
     return NaN;
