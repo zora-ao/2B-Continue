@@ -24,7 +24,7 @@ export default function ScanControls({ onResult, disabled }) {
     onResult(result);
     setStatus({
       state: "done",
-      message: "Filled from the rating label. Check the values, then add hours per day.",
+      message: "Scan complete. Check the suggested values, then add hours per day.",
     });
   }
 

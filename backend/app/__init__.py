@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 
 from .blueprints.api.routes import api
@@ -15,6 +15,7 @@ from .blueprints.planning import planning_bp
 from .blueprints.dashboard import dashboard_bp
 from .blueprints.solar import solar_bp
 from .blueprints.alerts import alerts_bp
+from .blueprints.scans import scans_bp
 from .errors import register_error_handlers
 from .extensions import db, jwt, migrate
 
@@ -52,6 +53,8 @@ def create_app(test_config=None) -> Flask:
         JWT_COOKIE_SAMESITE="Lax",
         JWT_SESSION_COOKIE=False,
         JWT_COOKIE_CSRF_PROTECT=True,
+        GEMINI_API_KEY=os.getenv("GEMINI_API_KEY"),
+        GEMINI_SCAN_MODEL=os.getenv("GEMINI_SCAN_MODEL", "gemini-3.5-flash-lite"),
     )
     if test_config:
         app.config.update(test_config)
@@ -63,13 +66,17 @@ def create_app(test_config=None) -> Flask:
     register_error_handlers(app)
     jwt.init_app(app)
     register_jwt_errors(jwt)
-    app.before_request(require_login)
+    @app.before_request
+    def authenticate_request():
+        if request.endpoint != "scans.send_photo":
+            return require_login()
 
     origins = [origin.strip() for origin in
                os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")]
     CORS(app, resources={r"/api/*": {"origins": origins}})
 
     app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(scans_bp, url_prefix="/api")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(appliances_bp, url_prefix="/api/households/<int:household_id>/appliances")
     app.register_blueprint(households_bp, url_prefix="/api/households")
