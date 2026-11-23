@@ -265,13 +265,32 @@ def get_solar_profile(household_id):
 
 @solar_bp.put("/profile")
 def save_solar_profile(household_id):
-    household_record(household_id, lock=True)
+    household_record(household_id)
     data = json_payload()
     if set(data) - PROFILE_FIELDS:
         raise ValidationError(f"Only {', '.join(sorted(PROFILE_FIELDS))} are accepted.")
+    # Validate everything first, so a bad field never waits on Open-Meteo.
+    place = parse_place(data["location"]) if "location" in data else None
+    changes = {}
+    if "install_budget" in data:
+        changes["install_budget"] = parse_budget(data["install_budget"])
+    if "system_kw" in data:
+        changes["system_kw"] = parse_system_kw(data["system_kw"])
+    if "panel_watts" in data:
+        changes["panel_watts"] = parse_panel_watts(data["panel_watts"])
+
+    if place is not None:
+        # Fetch sunlight with no transaction open: a slow Open-Meteo must not hold a lock or a connection.
+        db.session.commit()
+        sun_hours = yearly_sun_hours(place["latitude"], place["longitude"], today())
+        changes.update(location_name=place["name"], latitude=place["latitude"],
+                       longitude=place["longitude"],
+                       sun_hours=sun_hours if sun_hours is not None else FALLBACK_SUN_HOURS,
+                       sun_hours_estimated=sun_hours is None)
+
+    household_record(household_id, lock=True)
     profile = get_profile(household_id)
     created = profile is None
-    place = parse_place(data["location"]) if "location" in data else None
     if created:
         profile = SolarProfile(household_id=household_id, location_name=DEFAULT_PLACE["name"],
                                latitude=DEFAULT_PLACE["latitude"],
@@ -279,18 +298,8 @@ def save_solar_profile(household_id):
                                sun_hours=DEFAULT_PLACE["sun_hours"], sun_hours_estimated=True,
                                panel_watts=DEFAULT_PANEL_WATTS)
         db.session.add(profile)
-    if place is not None:
-        sun_hours = yearly_sun_hours(place["latitude"], place["longitude"], today())
-        profile.location_name = place["name"]
-        profile.latitude, profile.longitude = place["latitude"], place["longitude"]
-        profile.sun_hours = sun_hours if sun_hours is not None else FALLBACK_SUN_HOURS
-        profile.sun_hours_estimated = sun_hours is None
-    if "install_budget" in data:
-        profile.install_budget = parse_budget(data["install_budget"])
-    if "system_kw" in data:
-        profile.system_kw = parse_system_kw(data["system_kw"])
-    if "panel_watts" in data:
-        profile.panel_watts = parse_panel_watts(data["panel_watts"])
+    for field, value in changes.items():
+        setattr(profile, field, value)
     db.session.commit()
     return jsonify(item=serialize_profile(profile_settings(profile))), 201 if created else 200
 

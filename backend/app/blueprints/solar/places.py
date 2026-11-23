@@ -7,6 +7,7 @@ import json
 import time
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from http.client import HTTPException
 from statistics import fmean
 from threading import Lock
 from urllib.error import URLError
@@ -65,7 +66,7 @@ def search_places(query):
             results.append({"name": item["name"], "region": item.get("admin1"),
                             "latitude": round_coordinate(item["latitude"]),
                             "longitude": round_coordinate(item["longitude"])})
-    except (URLError, OSError, ValueError, KeyError, TypeError) as error:
+    except (URLError, OSError, HTTPException, ValueError, KeyError, TypeError) as error:
         raise PlaceSearchError(str(error)) from error
 
     with _lock:
@@ -87,7 +88,9 @@ def yearly_sun_hours(latitude, longitude, today):
                                        "timezone": "Asia/Manila",
                                        "start_date": start.isoformat(), "end_date": end.isoformat()})
         values = [value for value in payload["daily"]["shortwave_radiation_sum"] if value is not None]
-    except (URLError, OSError, ValueError, KeyError, TypeError):
+    except Exception as error:  # Any failure means "estimate"; a save must never break on it.
+        current_app.logger.warning("Yearly sunlight unavailable (%s); using the estimate.",
+                                   type(error).__name__)
         return None
     if not values:
         return None

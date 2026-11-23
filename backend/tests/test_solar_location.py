@@ -61,3 +61,12 @@ def test_places_search(client, solar, monkeypatch):
         raise PlaceSearchError("offline")
     monkeypatch.setattr(routes, "search_places", broken)
     assert client.get(f"{solar}/places?q=Batangas").status_code == 502
+
+
+def test_bad_fields_are_rejected_before_fetching_sunlight(client, solar, monkeypatch):
+    calls = []
+    monkeypatch.setattr(routes, "yearly_sun_hours", lambda *args: calls.append(args) or Decimal("5.10"))
+    response = client.put(f"{solar}/profile", headers=csrf_headers(client),
+                          json={"location": BATANGAS, "install_budget": -5})
+    assert response.status_code == 400
+    assert calls == []

@@ -70,3 +70,13 @@ def test_search_places_keeps_one_per_name_and_region(monkeypatch):
         {"name": "Batangas II", "admin1": "Central Luzon", "latitude": 15.5, "longitude": 120.6}]})
     assert [(p["name"], p["latitude"]) for p in places.search_places("Batangas")] == [
         ("Batangas", 13.76), ("Batangas II", 15.5)]
+
+
+def test_yearly_sun_hours_survives_a_truncated_reply(app, monkeypatch):
+    from http.client import IncompleteRead
+    monkeypatch.setitem(app.config, "SOLAR_WEATHER_ENABLED", True)
+
+    def opener(request, timeout=None):
+        raise IncompleteRead(b"{")
+    monkeypatch.setattr(places, "urlopen", opener)
+    assert places.yearly_sun_hours(Decimal("13.76"), Decimal("121.06"), date(2026, 11, 24)) is None

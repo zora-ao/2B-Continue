@@ -129,7 +129,7 @@ The **best fit** is the smallest system within your budget that covers at least 
  Flask API  ── blueprints: households · appliances · budget-planner · dashboard · solar · alerts
         │                         │
         ▼                         ▼
- PostgreSQL (Supabase)      Open-Meteo weather API (solar expected output)
+ PostgreSQL (Supabase)      Open-Meteo (place search, yearly sunlight, daily solar output)
 ```
 
 Rules the codebase follows:
@@ -282,7 +282,7 @@ All endpoints live under `/api`. Each feature is scoped to one household: `/api/
 | Appliances | `…/<id>/appliances` | `GET`, `POST`, `GET/PATCH/DELETE /<appliance_id>` |
 | Budget Planner | `…/<id>/budget-planner` | `GET`, `POST /generate`, `PUT /plan`, `DELETE /plan` |
 | Dashboard | `…/<id>/dashboard` | `GET`, `GET /alerts`, meter readings and solar generation (`GET/POST/PUT/DELETE`) |
-| Solar | `…/<id>/solar` | `GET`, `GET /recommendations`, `GET /performance`, `GET /locations`, `GET/PUT /profile`, readings |
+| Solar | `…/<id>/solar` | `GET`, `GET /recommendations`, `GET /performance`, `GET /places?q=`, `GET/PUT /profile`, readings |
 | Alerts | `…/<id>/alerts` | `GET`, `GET/PATCH /rules`, `POST /refresh`, `PATCH /<alert_id>`, `POST /mark-all-read` |
 
 Most `GET` endpoints accept `?month=YYYY-MM` (default: the current month in Manila time).
@@ -311,7 +311,7 @@ Add the Vercel URL to `CORS_ORIGINS` on Render if the frontend calls the API dir
 - **Manual data only.** No smart-meter or utility integration; appliance figures are estimates from the values you enter.
 - **Simple pricing.** Bills exclude fixed charges, taxes, time-of-use rates and solar export credits.
 - **No background jobs.** Alerts are evaluated when data changes or when you refresh; nothing is sent by email or push.
-- **Indicative solar data.** Prices and sun-hours in `backend/app/blueprints/solar/catalog.py` are estimates, not supplier quotes.
+- **Indicative solar data.** System prices in `backend/app/blueprints/solar/catalog.py` are estimates, not supplier quotes. Sun-hours are your place's 12-month average from Open-Meteo, or 4.5 when that's unavailable.
 
 ---
 

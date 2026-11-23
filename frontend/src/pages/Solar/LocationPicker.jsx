@@ -50,6 +50,13 @@ export default function LocationPicker({ householdId, location, onPick }) {
     };
   }, [householdId, query]);
 
+  // Drop the old results at once, so Enter can't pick a place from the previous search.
+  function changeQuery(text) {
+    setQuery(text);
+    setResults([]);
+    setStatus(text.trim().length >= 2 ? "searching" : "idle");
+  }
+
   function pick(place) {
     setOpen(false);
     setQuery("");
@@ -101,7 +108,7 @@ export default function LocationPicker({ householdId, location, onPick }) {
           <PopoverContent align="start" className="w-(--radix-popover-trigger-width) min-w-72 p-0">
             {/* The server already matched the text, so cmdk must not filter again. */}
             <Command shouldFilter={false} label="Search places">
-              <CommandInput placeholder="Search your city or town" value={query} onValueChange={setQuery} />
+              <CommandInput placeholder="Search your city or town" value={query} onValueChange={changeQuery} />
               <CommandList>
                 {message && (
                   <p role="status" className="px-3 py-6 text-center text-sm text-muted-foreground">
