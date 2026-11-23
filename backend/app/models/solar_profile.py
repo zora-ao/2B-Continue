@@ -21,7 +21,12 @@ class SolarProfile(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     household_id: Mapped[int] = mapped_column(
         db.ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
-    location_key: Mapped[str] = mapped_column(db.String(40), nullable=False)
+    # A searched place (or "My location"), rounded to about 1 km, and its average daily sun hours.
+    location_name: Mapped[str] = mapped_column(db.String(120), nullable=False)
+    latitude: Mapped[Decimal] = mapped_column(db.Numeric(5, 2), nullable=False)
+    longitude: Mapped[Decimal] = mapped_column(db.Numeric(6, 2), nullable=False)
+    sun_hours: Mapped[Decimal] = mapped_column(db.Numeric(4, 2), nullable=False)
+    sun_hours_estimated: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=True)
     install_budget: Mapped[Decimal | None] = mapped_column(db.Numeric(12, 2))
     system_kw: Mapped[Decimal | None] = mapped_column(db.Numeric(6, 3))
     panel_watts: Mapped[int] = mapped_column(db.Integer, nullable=False, default=550)
