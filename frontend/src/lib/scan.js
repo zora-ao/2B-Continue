@@ -27,14 +27,14 @@ export async function shrinkPhoto(file) {
   });
 }
 
-// The scan only suggests values; anything unknown falls back to "other".
 export function scanToFields(result) {
-  const knownType = APPLIANCE_TYPES.some((item) => item.value === result.type);
-  return {
-    name: result.name ?? "",
-    type: knownType ? result.type : "other",
-    watts: result.watts == null ? "" : String(result.watts),
-  };
+  const fields = {};
+  if (result.name) fields.name = result.name;
+  if (result.type !== "other" && APPLIANCE_TYPES.some((item) => item.value === result.type)) {
+    fields.type = result.type;
+  }
+  if (result.watts != null) fields.watts = String(result.watts);
+  return fields;
 }
 
 export function scanErrorMessage(error) {
