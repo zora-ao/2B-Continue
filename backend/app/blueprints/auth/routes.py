@@ -1,17 +1,21 @@
 from datetime import datetime, timedelta, timezone
 
 from flask import g, jsonify, make_response
-from flask_jwt_extended import unset_jwt_cookies
-from sqlalchemy import select, update
+from flask_jwt_extended import (get_jwt, get_jwt_request_location, unset_jwt_cookies,
+                                verify_jwt_in_request)
+from flask_jwt_extended.exceptions import JWTExtendedException
+from jwt.exceptions import PyJWTError
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth_bp
-from .tokens import issue_tokens, serialize_user, token_response, wants_mobile
+from .tokens import (REFRESH_GRACE, issue_tokens, prune_refresh_tokens, serialize_user,
+                     token_response, wants_mobile)
 from .validation import normalize_email, validate_login, validate_registration
 from ...errors import ValidationError, json_payload
 from ...extensions import db
-from ...models import User
+from ...models import RefreshToken, User
 
 MAX_FAILED_LOGINS = 5
 LOCKOUT = timedelta(minutes=15)
@@ -60,13 +64,44 @@ def login():
         return jsonify(error="Email or password is incorrect."), 401
     user.failed_login_count = 0
     user.locked_until = None
+    prune_refresh_tokens(user.id)
     access, refresh = issue_tokens(user)
     db.session.commit()
     return token_response(user, access, refresh, mobile=wants_mobile())
 
 
+@auth_bp.post("/refresh")
+def refresh():
+    verify_jwt_in_request(refresh=True)
+    row = db.session.scalar(select(RefreshToken).where(RefreshToken.jti == get_jwt()["jti"])
+                            .with_for_update())
+    if row is None:
+        return jsonify(error="Please log in."), 401
+    now = datetime.now(timezone.utc)
+    if row.used_at is not None:
+        if now - row.used_at <= REFRESH_GRACE:
+            return jsonify(error="Refresh already used."), 409
+        db.session.execute(delete(RefreshToken).where(RefreshToken.user_id == row.user_id))
+        db.session.commit()
+        return jsonify(error="Please log in."), 401
+    user = db.session.get(User, row.user_id)
+    if user is None:
+        return jsonify(error="Please log in."), 401
+    row.used_at = now
+    access, refresh_token = issue_tokens(user)
+    db.session.commit()
+    return token_response(user, access, refresh_token,
+                          mobile=get_jwt_request_location() == "headers")
+
+
 @auth_bp.post("/logout")
 def logout():
+    try:
+        if verify_jwt_in_request(refresh=True, optional=True):
+            db.session.execute(delete(RefreshToken).where(RefreshToken.jti == get_jwt()["jti"]))
+            db.session.commit()
+    except (JWTExtendedException, PyJWTError):
+        pass
     response = make_response("", 204)
     unset_jwt_cookies(response)
     return response

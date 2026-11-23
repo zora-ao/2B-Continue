@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from flask import jsonify, request
 from flask_jwt_extended import (create_access_token, create_refresh_token, decode_token,
                                 set_access_cookies, set_refresh_cookies)
+from sqlalchemy import delete, or_
 
 from ...extensions import db
 from ...models import RefreshToken
@@ -27,6 +28,13 @@ def issue_tokens(user):
     db.session.add(RefreshToken(user_id=user.id, jti=decode_token(refresh)["jti"],
                                 expires_at=datetime.now(timezone.utc) + REFRESH_LIFETIME))
     return access, refresh
+
+
+def prune_refresh_tokens(user_id):
+    now = datetime.now(timezone.utc)
+    db.session.execute(delete(RefreshToken).where(
+        RefreshToken.user_id == user_id,
+        or_(RefreshToken.expires_at < now, RefreshToken.used_at < now - timedelta(days=1))))
 
 
 def token_response(user, access, refresh, *, mobile, status=200):
