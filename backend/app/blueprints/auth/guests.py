@@ -26,7 +26,9 @@ def delete_abandoned_guests(limit=GUEST_CLEANUP_BATCH):
                                   RefreshToken.used_at.is_(None))
     guest_ids = db.session.scalars(
         select(User.id).where(User.email.is_(None), ~usable_token)
-        .order_by(User.created_at).limit(limit)).all()
+        .order_by(User.created_at).limit(limit)
+        # Lock the guests; skip any a register/login is upgrading or merging right now.
+        .with_for_update(skip_locked=True)).all()
     if not guest_ids:
         return 0
     households = select(Household.id).where(Household.user_id.in_(guest_ids))
@@ -57,7 +59,9 @@ def recognise_guest():
         claims = decode_token(token, csrf_value=csrf, allow_expired=True)
         if claims["type"] != "access":
             return None, None
-        user = db.session.get(User, int(claims["sub"]))
+        # Lock the row so cleanup or a second register can't change it underneath us.
+        user = db.session.get(User, int(claims["sub"]), with_for_update=True,
+                              populate_existing=True)
     except (JWTExtendedException, PyJWTError, ValueError, KeyError):
         return None, None
     if user is None or not user.is_guest:
