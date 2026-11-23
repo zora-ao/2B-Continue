@@ -61,3 +61,12 @@ def test_yearly_sun_hours_disabled_or_failing(app, monkeypatch):
     monkeypatch.setitem(app.config, "SOLAR_WEATHER_ENABLED", True)
     failing_urlopen(monkeypatch)
     assert places.yearly_sun_hours(Decimal("13.76"), Decimal("121.06"), date(2026, 11, 24)) is None
+
+
+def test_search_places_keeps_one_per_name_and_region(monkeypatch):
+    fake_urlopen(monkeypatch, {"results": [
+        {"name": "Batangas", "admin1": "Calabarzon", "latitude": 13.7567, "longitude": 121.0584},
+        {"name": "Batangas", "admin1": "Calabarzon", "latitude": 13.8333, "longitude": 121.0},
+        {"name": "Batangas II", "admin1": "Central Luzon", "latitude": 15.5, "longitude": 120.6}]})
+    assert [(p["name"], p["latitude"]) for p in places.search_places("Batangas")] == [
+        ("Batangas", 13.76), ("Batangas II", 15.5)]

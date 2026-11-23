@@ -55,10 +55,16 @@ def search_places(query):
     try:
         payload = _fetch(GEOCODING_URL, {"name": query.strip(), "count": 8, "language": "en",
                                          "countryCode": "PH", "format": "json"})
-        results = [{"name": item["name"], "region": item.get("admin1"),
-                    "latitude": round_coordinate(item["latitude"]),
-                    "longitude": round_coordinate(item["longitude"])}
-                   for item in payload.get("results") or []]
+        results, seen = [], set()
+        for item in payload.get("results") or []:
+            # A city and its province often share a name; people can't tell them apart, so keep the first.
+            label = (item["name"], item.get("admin1"))
+            if label in seen:
+                continue
+            seen.add(label)
+            results.append({"name": item["name"], "region": item.get("admin1"),
+                            "latitude": round_coordinate(item["latitude"]),
+                            "longitude": round_coordinate(item["longitude"])})
     except (URLError, OSError, ValueError, KeyError, TypeError) as error:
         raise PlaceSearchError(str(error)) from error
 
