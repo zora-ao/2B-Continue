@@ -38,6 +38,8 @@ export function parseApplianceForm(form) {
   }
   if (!(hoursPerDay >= 0 && hoursPerDay <= 24) || !hasValidPrecision(hoursPerDay)) {
     errors.hoursPerDay = "Hours must be between 0 and 24 with up to 3 decimal places";
+  } else if (form.isMustHave && hoursPerDay === 0) {
+    errors.hoursPerDay = "Must-have appliances need more than 0 hours per day";
   }
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 2147483647) {
     errors.quantity = "Quantity must be a whole number, 1 or more";

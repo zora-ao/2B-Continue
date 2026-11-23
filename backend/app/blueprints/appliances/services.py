@@ -8,9 +8,11 @@ from ...extensions import db
 from ...models import Appliance
 
 
-def get_appliance(household_id, appliance_id):
-    return db.one_or_404(select(Appliance).where(
-        Appliance.id == appliance_id, Appliance.household_id == household_id))
+def get_appliance(household_id, appliance_id, *, lock=False):
+    query = select(Appliance).where(Appliance.id == appliance_id, Appliance.household_id == household_id)
+    if lock:
+        query = query.with_for_update()
+    return db.one_or_404(query)
 
 
 def list_summary(household, month, days, category):
@@ -35,8 +37,17 @@ def list_summary(household, month, days, category):
 
 
 def save_appliance(household_id, values, appliance=None):
+    appliance = apply_appliance_values(household_id, values, appliance)
+    db.session.commit()
+    return appliance
+
+
+def apply_appliance_values(household_id, values, appliance=None):
     hours = values.get("hours_per_day", appliance.hours_per_day if appliance else Decimal(0))
     standby_hours = values.get("standby_hours_per_day", appliance.standby_hours_per_day if appliance else Decimal(0))
+    must_have = values.get("is_must_have", appliance.is_must_have if appliance else False)
+    if must_have and hours == 0 and (appliance is None or {"hours_per_day", "is_must_have"} & values.keys()):
+        raise ValidationError("Must-have appliances need more than 0 hours per day.")
     if hours + standby_hours > 24:
         raise ValidationError("Active and standby hours combined cannot exceed 24 per day.")
     if appliance is None:
@@ -44,7 +55,6 @@ def save_appliance(household_id, values, appliance=None):
         db.session.add(appliance)
     for field, value in values.items():
         setattr(appliance, field, value)
-    db.session.commit()
     return appliance
 
 

@@ -65,6 +65,7 @@ def _build_plan(appliances, month, days, style, budget, rate, adjustments):
             "appliance_id": appliance.id, "name": appliance.name,
             "appliance_type": appliance.appliance_type, "watts": float(appliance.watts),
             "quantity": appliance.quantity, "is_must_have": appliance.is_must_have,
+            "max_hours_per_day": float(24 - appliance.standby_hours_per_day),
             "original_hours_per_day": float(appliance.hours_per_day),
             "hours_per_day": float(hours[appliance.id]),
             "is_reduced": hours[appliance.id] < appliance.hours_per_day,

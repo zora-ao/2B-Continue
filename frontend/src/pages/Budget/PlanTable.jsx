@@ -78,6 +78,7 @@ export default function PlanTable({ plan, onHoursChange, busy }) {
 function PlanRow({ item, onHoursChange, busy }) {
   const TypeIcon = getTypeIcon(item.type);
   const hours = item.hoursPerDay;
+  const minimum = item.isMustHave ? Math.min(0.5, item.maxHoursPerDay) : 0;
 
   return (
     <tr className={cn("border-b border-border last:border-0", item.isReduced && "bg-warning-soft")}>
@@ -90,40 +91,35 @@ function PlanRow({ item, onHoursChange, busy }) {
             {item.name}
             {item.quantity > 1 && ` (×${item.quantity})`}
           </span>
-          {item.isMustHave && <Lock className="size-4 text-green" aria-label="Must-have" />}
+          {item.isMustHave && <Lock className="size-4 text-green" aria-label="Must-have, protected from automatic cuts" />}
         </div>
       </td>
       <td className="px-2 py-3">{formatNumber(item.watts)} W</td>
       <td className="px-2 py-3">
-        {item.isMustHave ? (
-          // Must-haves keep their hours, so there's nothing to adjust.
-          <span className="pl-8">{formatNumber(hours)} h</span>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon-xs"
-              aria-label={`Fewer hours for ${item.name}`}
-              disabled={busy || hours <= 0}
-              onClick={() => onHoursChange(item.id, roundHours(Math.max(0, hours - 0.5)))}
-            >
-              <Minus />
-            </Button>
-            <span className="w-12 text-center">{formatNumber(hours)} h</span>
-            <Button
-              variant="outline"
-              size="icon-xs"
-              aria-label={`More hours for ${item.name}`}
-              disabled={busy || hours >= 24}
-              onClick={() => onHoursChange(item.id, roundHours(Math.min(24, hours + 0.5)))}
-            >
-              <Plus />
-            </Button>
-            {item.isReduced && (
-              <span className="text-xs text-warning">was {formatNumber(item.originalHours)}h</span>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon-xs"
+            aria-label={`Fewer hours for ${item.name}`}
+            disabled={busy || hours <= minimum}
+            onClick={() => onHoursChange(item.id, roundHours(Math.max(minimum, hours - 0.5)))}
+          >
+            <Minus />
+          </Button>
+          <span className="w-12 text-center">{formatNumber(hours)} h</span>
+          <Button
+            variant="outline"
+            size="icon-xs"
+            aria-label={`More hours for ${item.name}`}
+            disabled={busy || hours >= item.maxHoursPerDay}
+            onClick={() => onHoursChange(item.id, roundHours(Math.min(item.maxHoursPerDay, hours + 0.5)))}
+          >
+            <Plus />
+          </Button>
+          {item.isReduced && (
+            <span className="text-xs text-warning">was {formatNumber(item.originalHours)}h</span>
+          )}
+        </div>
       </td>
       <td className="px-2 py-3">{formatNumber(item.dailyKwh)}</td>
       <td className="px-2 py-3">{formatPeso(item.monthlyCost)}</td>

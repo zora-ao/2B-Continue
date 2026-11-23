@@ -128,6 +128,7 @@ function fromPlan(plan) {
       quantity: item.quantity,
       isMustHave: item.is_must_have,
       originalHours: item.original_hours_per_day,
+      maxHoursPerDay: item.max_hours_per_day ?? 24,
       hoursPerDay: item.hours_per_day,
       isReduced: item.is_reduced,
       dailyKwh: item.estimated_daily_kwh,
@@ -301,6 +302,7 @@ function fromScanSession(session) {
 export const api = {
   health: () => request("/health"),
   listHouseholds: () => request("/households"),
+  deleteHousehold: (id) => request(`/households/${id}`, { method: "DELETE" }),
   createHousehold: (data) => request("/households", {
     method: "POST", body: JSON.stringify(data),
   }),
@@ -339,6 +341,12 @@ export const api = {
       method: "POST", body: JSON.stringify(toPlanRequest(planRequest)),
     });
     return fromPlan(data.plan);
+  },
+  updateBudgetHours: async (householdId, applianceId, planRequest) => {
+    const data = await request(`${plannerPath(householdId)}/hours/${applianceId}`, {
+      method: "PATCH", body: JSON.stringify(toPlanRequest(planRequest)),
+    });
+    return { plan: fromPlan(data.plan), preview: fromPlan(data.preview), savedPlan: fromSavedPlan(data.saved_plan) };
   },
   saveBudgetPlan: async (householdId, planRequest) => {
     const data = await request(`${plannerPath(householdId)}/plan`, {

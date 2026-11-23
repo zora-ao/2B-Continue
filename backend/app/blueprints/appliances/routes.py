@@ -34,7 +34,7 @@ def retrieve_appliance(household_id, appliance_id):
 
 @appliances_bp.patch("/<int:appliance_id>")
 def update_appliance(household_id, appliance_id):
-    appliance = get_appliance(household_id, appliance_id)
+    appliance = get_appliance(household_id, appliance_id, lock=True)
     values = validate_appliance(json_payload(), partial=True)
     month, days = estimate_period(request.args.get("month"))
     appliance = save_appliance(household_id, values, appliance)

@@ -59,6 +59,16 @@ def create_invite(household_id):
     return issue_invite(household_id, g.user.id)
 
 
+@households_bp.delete("/<int:household_id>")
+def delete_household(household_id):
+    household = db.one_or_404(select(Household).where(
+        Household.id == household_id, Household.user_id == g.user.id,
+    ).with_for_update())
+    db.session.delete(household)
+    db.session.commit()
+    return "", 204
+
+
 @households_bp.post("/join")
 def join_household():
     if g.user.is_guest:
