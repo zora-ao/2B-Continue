@@ -304,6 +304,10 @@ export const api = {
   createHousehold: (data) => request("/households", {
     method: "POST", body: JSON.stringify(data),
   }),
+  createHouseholdInvite: (id) => request(`/households/${id}/invites`, { method: "POST" }),
+  joinHousehold: (pin) => request("/households/join", {
+    method: "POST", body: JSON.stringify({ pin }),
+  }),
   listAppliances: async (householdId, options) => {
     const data = await request(appliancePath(householdId), options);
     return { ...data, items: data.items.map(fromApi) };
