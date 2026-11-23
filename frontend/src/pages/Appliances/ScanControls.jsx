@@ -4,11 +4,21 @@ import { api } from "@/api";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { scanErrorMessage, shrinkPhoto } from "@/lib/scan";
+import PhoneScanDialog from "./PhoneScanDialog";
 
-export default function ScanControls({ onResult, onPhoneScan, disabled }) {
+export default function ScanControls({ onResult, disabled }) {
   const uploadInput = useRef(null);
   const cameraInput = useRef(null);
   const [status, setStatus] = useState({ state: "idle", message: "" });
+  const [phoneOpen, setPhoneOpen] = useState(false);
+
+  function fill(result) {
+    onResult(result);
+    setStatus({
+      state: "done",
+      message: "Filled from the rating label. Check the values, then add hours per day.",
+    });
+  }
 
   async function handleFile(event) {
     const file = event.target.files[0];
@@ -18,12 +28,7 @@ export default function ScanControls({ onResult, onPhoneScan, disabled }) {
 
     setStatus({ state: "reading", message: "Reading the label..." });
     try {
-      const result = await api.readLabel(await shrinkPhoto(file));
-      onResult(result);
-      setStatus({
-        state: "done",
-        message: "Filled from the rating label. Check the values, then add hours per day.",
-      });
+      fill(await api.readLabel(await shrinkPhoto(file)));
     } catch (error) {
       setStatus({ state: "error", message: scanErrorMessage(error) });
     }
@@ -55,19 +60,17 @@ export default function ScanControls({ onResult, onPhoneScan, disabled }) {
           <Camera />
           Take photo
         </Button>
-        {onPhoneScan && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            className="hidden md:inline-flex"
-            disabled={disabled || reading}
-            onClick={onPhoneScan}
-          >
-            <Smartphone />
-            Use my phone
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          className="hidden md:inline-flex"
+          disabled={disabled || reading}
+          onClick={() => setPhoneOpen(true)}
+        >
+          <Smartphone />
+          Use my phone
+        </Button>
       </div>
 
       {/* The buttons open these; they stay out of the tab order. */}
@@ -92,6 +95,8 @@ export default function ScanControls({ onResult, onPhoneScan, disabled }) {
         {status.state === "done" && <CircleCheck className="size-4 shrink-0 text-green" />}
         {status.message}
       </p>
+
+      <PhoneScanDialog open={phoneOpen} onOpenChange={setPhoneOpen} onResult={fill} />
     </div>
   );
 }
