@@ -55,3 +55,23 @@ def test_refresh_tokens_deleted_with_user(app):
     db.session.execute(delete(User))
     db.session.commit()
     assert db.session.scalar(select(func.count()).select_from(RefreshToken)) == 0
+
+
+def test_guest_user_allows_nulls_and_many_guests(app):
+    db.session.add_all([User(), User()])
+    db.session.commit()
+    assert all(user.is_guest for user in db.session.scalars(select(User)))
+
+
+def test_email_without_password_rejected(app):
+    db.session.add(User(name="A", email="a@example.com"))
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+    db.session.rollback()
+
+
+def test_real_user_is_not_guest(app):
+    user = User(name="A", email="a@example.com", password_hash="x")
+    db.session.add(user)
+    db.session.commit()
+    assert user.is_guest is False

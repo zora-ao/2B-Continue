@@ -16,13 +16,16 @@ def upgrade():
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("name", sa.String(120), nullable=False),
-        sa.Column("email", sa.String(254), nullable=False),
-        sa.Column("password_hash", sa.String(255), nullable=False),
+        sa.Column("name", sa.String(120)),
+        sa.Column("email", sa.String(254)),
+        sa.Column("password_hash", sa.String(255)),
         sa.Column("failed_login_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("locked_until", sa.DateTime(timezone=True)),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.UniqueConstraint("email", name="uq_users_email"),
+        # Guests have no email or password; real accounts have both.
+        sa.CheckConstraint("(email IS NULL) = (password_hash IS NULL)",
+                           name="ck_users_guest_consistent"),
     )
     # Supabase exposes public tables through its Data API; RLS with no policies blocks that.
     op.execute("ALTER TABLE users ENABLE ROW LEVEL SECURITY")

@@ -15,7 +15,7 @@ COOKIE_MAX_AGE = int(REFRESH_LIFETIME.total_seconds())
 
 
 def serialize_user(user):
-    return {"id": user.id, "name": user.name, "email": user.email}
+    return {"id": user.id, "name": user.name, "email": user.email, "is_guest": user.is_guest}
 
 
 def wants_mobile():

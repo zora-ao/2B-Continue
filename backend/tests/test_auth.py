@@ -12,7 +12,7 @@ from tests.conftest import register
 def test_register_creates_user_and_logs_in(client):
     response = register(client, name=" Ana ", email=" Ana@Example.com ")
     assert response.status_code == 201
-    assert response.get_json() == {"user": {"id": ANY, "name": "Ana", "email": "ana@example.com"}}
+    assert response.get_json() == {"user": {"id": ANY, "name": "Ana", "email": "ana@example.com", "is_guest": False}}
     assert "access_token" not in response.get_json()
     assert client.get("/api/auth/me").get_json()["user"]["email"] == "ana@example.com"
 

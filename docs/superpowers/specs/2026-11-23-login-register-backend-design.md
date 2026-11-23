@@ -1,9 +1,9 @@
 # Login & Register (backend) — Design
 
-**Date:** 2026-11-23 (revised the same day: Flask session → JWT, for web + mobile)
+**Date:** 2026-11-23 (revised twice the same day: Flask session → JWT for web + mobile, then **optional login via guest accounts**)
 **Project:** EnergyWise — SDG 7 energy-saving web app (a mobile app is planned too)
-**Scope:** Backend only (`backend/`). The web login/register pages and the mobile app are separate, later work.
-**Branch:** `feat/login-register-back`. It already holds an unpushed version built on Flask's session cookie (commits `018378a..5ce54ed`). This revision reworks that branch to JWT before the PR opens, so the cookie-session version never ships.
+**Scope:** Backend only (`backend/`). The web login/register pages, the **Accounts** button, guest start-up in the web app, and the mobile app are separate, later work.
+**Branch:** `feat/login-register-back`, pushed, at `9444df1`. It holds the JWT version described below. The guest-mode revision ("Guest mode") is added on the same branch. Migration `f4b2d8c61a37` still hasn't been applied to any shared database, so it is edited in place again.
 
 ## Why
 
@@ -11,12 +11,60 @@ Today the API has no idea who is using it. `GET /api/households` returns every h
 
 The team is building a **web app and a mobile app** on the same API and agreed on **JWT**. A mobile app isn't a browser and can't lean on the website's cookie, so it needs a token it stores and sends itself. JWT is the standard for that.
 
+**Login is optional (guest-mode revision).** Accounts aren't the point of EnergyWise for most people; the energy-saving features are. Visitors must be able to use every feature straight away, with no login wall, and register or log in later from an **Accounts** button if they choose. Their data still has to stay private, and it must carry over when they sign up.
+
+## Guest mode
+
+**Approaches considered** (the user picked A):
+
+- **A. An automatic guest account — chosen.** On a first visit the app quietly creates a nameless user and logs it in. Its households are private to that device. Registering turns that same user into a real account, so the data carries over. Everything else (tokens, refresh, logout, the ownership guard) treats a guest like any user.
+- B. Guests share the unowned households, as before login existed. Simple, but every guest sees every other guest's data, and nothing carries over on sign-up.
+- C. Guest data kept only in the browser. Every feature would need a second, offline version. Ruled out.
+
+Two other ways to build A were rejected as unnecessary complexity: a separate guest table (a second ownership system) and a browser ID instead of a user (bypasses the tokens).
+
+**Decided:**
+
+- **A guest is a `users` row with `email` NULL.** `name`, `email`, and `password_hash` become nullable. An `is_guest` property means `email is None`. A check constraint keeps it consistent: `(email IS NULL) = (password_hash IS NULL)`.
+- **`POST /api/auth/guest`** (public, no body) creates a guest and issues tokens exactly like login: cookies for web, or JSON when `X-Client: mobile`. Returns **201**. It does not look at any existing token; the apps call it only when they have no login (first visit, after logout, or after refresh fails).
+- **Register while a guest.** If the register request carries a valid **access** token (cookie + CSRF, or Bearer) belonging to a guest, the backend **fills in that same user** (name, email, password hash) instead of creating a new one. Households stay where they are and nothing is copied. It returns 200 instead of 201, with fresh tokens. The guest's old refresh tokens are deleted, so the old guest session can't be refreshed. Register with no token, or with a token for a real (non-guest) user, behaves as before: it creates a new user (201). An invalid or expired token on register is ignored, and it acts like no token. Duplicate email is still 409, and in that case the guest stays a guest.
+- **Login while a guest.** If login succeeds and the request carried a valid access token belonging to a guest, then in the same transaction:
+  - the guest's households move to the account (`UPDATE households SET user_id = <account> WHERE user_id = <guest>`);
+  - the guest user is deleted (its refresh tokens cascade).
+
+  A failed or locked login moves nothing. If the token belongs to a real user, or to the same account, nothing moves.
+- **Logout** is unchanged. Afterwards the apps start a **fresh** guest, never the previous one, so a shared computer doesn't hand over data.
+- **The user object** becomes `{"id", "name", "email", "is_guest"}`. For guests, `name` and `email` are `null`. `/me` works for guests.
+- **Guards and ownership are unchanged.** Every `/api` request still needs a valid access token; guests have one. `auth.guest` joins the public endpoints.
+- **Guest cleanup.** A guest with **no unexpired refresh token** (unused for 30 days) is abandoned. Each call to `/guest` deletes up to **50** such guests (oldest first) before creating the new one, so no scheduled job is needed. Deleting a guest also deletes its households and everything under them.
+  - Note: `appliances.household_id` has **no** database `ON DELETE CASCADE`; only the ORM relationship cascades. Cleanup must therefore delete appliances explicitly, or delete households through the ORM. The other child tables already cascade in the database.
+  - The guest delete must not touch real users (`email IS NOT NULL`).
+- **Lockout, validation, and token lifetimes are unchanged.** Guests can't log in by email/password; they only exist through their tokens.
+- **How register and login recognise the guest** *(builder's call, from review)*. A guest's access token expires after 15 minutes, so "ignore expired tokens" would silently drop any guest who was idle before signing up. Instead:
+  - Register and login read the access token **themselves**, from the `access_token_cookie` cookie (with the `X-CSRF-TOKEN` header checked against it) or else the `Authorization: Bearer` header. They decode it with `decode_token(..., allow_expired=True)`.
+  - An **expired but correctly signed** access token for an existing guest still identifies that guest.
+  - Anything else (no token, bad signature, CSRF mismatch, a deleted user, a non-guest user) means "no guest". Register and login then behave as without a guest. They never return 401 because of this token.
+- **Reply format when upgrading or merging a guest** *(builder's call, from review)*. When a guest was recognised from a **cookie**, the reply always sets cookies and ignores `X-Client`. When it came from a Bearer header, the reply is JSON. Same rule as refresh and logout, so an injected script can't swap a cookie guest for readable tokens. A script running in the page can still act as the guest (register it to an email the attacker controls, or log in to the attacker's account and pull the households in). That's the same accepted page-script (XSS) risk as before, and it's limited to guest data.
+- **When a guest counts as abandoned** *(builder's call, from review)*: it has no refresh row that is both unexpired (`expires_at > now`) and unused (`used_at IS NULL`).
+  - A guest that logged out, or was wiped by a replay, is cleaned up at the next `/guest` call. That's prompt, which matters on shared computers.
+  - Refresh also prunes that user's used rows older than a day, using the same pruning as login, so an active guest doesn't pile up rows.
+- **A guest who logs out loses their data (user's decision: accepted, with a warning).** A guest has no email or password, so after logout (or a broken session, such as a replay wipe or a lost refresh reply) there is no way back in, and cleanup deletes the data. The backend treats guest logout like any logout. The **frontend PR** must:
+  - hide **Log out** for guests, or replace it with "Create an account to keep your data";
+  - show a "You're using EnergyWise as a guest" note in the Accounts area.
+- **Accepted risk:** anyone can create many guests. Cleanup limits the buildup; rate limiting can come later.
+- **Frontend (later PR):**
+  - on first visit with no login, call `/guest` and go straight to the dashboard;
+  - an **Accounts** button in the sidebar opens Login / Register;
+  - show "Guest" vs the user's name;
+  - after logout, call `/guest` again.
+
 ## Goals
 
 - Register with **name, email, password**; log in with **email + password**; log out; ask "who am I"; refresh an expired login.
 - The **same backend serves web and mobile**. Web keeps tokens where page JavaScript can't read them; mobile gets tokens to store in the phone's secure storage.
 - Logins last **30 days** without the user noticing, but a stolen access token is only useful for **15 minutes**, and **logout really logs that device out**.
-- Every `/api` endpoint except register, login, logout, refresh, and health requires a logged-in user.
+- Login is optional for people: anyone can use every feature as a **guest**, and register or log in later without losing data (see "Guest mode").
+- Every `/api` endpoint except register, login, guest, logout, refresh, and health requires a valid access token. Guests have one.
 - A user can only reach households they own (and everything under them: appliances, budget plans, dashboard, readings, solar, alerts).
 - `GET /api/households` lists only the user's households; `POST /api/households` makes the new one theirs.
 
@@ -85,9 +133,9 @@ All of these are additions; nothing existing changes.
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | integer PK | |
-| `name` | varchar(120), not null | trimmed, 1–120 chars |
-| `email` | varchar(254), not null, unique (`uq_users_email`) | stored trimmed + lowercased |
-| `password_hash` | varchar(255), not null | Werkzeug `generate_password_hash` (scrypt) |
+| `name` | varchar(120), **nullable** (NULL for guests) | trimmed, 1–120 chars |
+| `email` | varchar(254), **nullable** (NULL for guests), unique (`uq_users_email`) | stored trimmed + lowercased; NULL means guest |
+| `password_hash` | varchar(255), **nullable** (NULL for guests) | Werkzeug `generate_password_hash` (scrypt). Check constraint `ck_users_guest_consistent`: `(email IS NULL) = (password_hash IS NULL)` |
 | `failed_login_count` | integer, not null, default 0 | lockout |
 | `locked_until` | timestamptz, nullable | lockout |
 | `created_at` | timestamptz, not null | UTC |
@@ -133,10 +181,11 @@ The migration already on the branch (`f4b2d8c61a37`) has never been applied anyw
 | POST | `/refresh` | none (refresh cookie, or `Authorization: Bearer <refresh token>` from mobile) | 200, new tokens issued | 401 `"Please log in."` |
 | POST | `/logout` | none (refresh cookie, or Bearer refresh token from mobile) | 204 | never fails |
 | GET | `/me` | — (access token) | 200 `{"user": {...}}` | 401 `"Please log in."` |
+| POST | `/guest` | none | 201, tokens issued for a new guest | — |
 
-The user object is `{"id", "name", "email"}`. Validation (`validation.py`) and the lockout are unchanged from the current branch.
+The user object is `{"id", "name", "email", "is_guest"}` (`name`/`email` null for guests). Register and login also have the guest behaviour in "Guest mode" (register may return 200 when upgrading a guest). Validation (`validation.py`) and the lockout are unchanged from the current branch.
 
-- **On refresh and logout, the token's source decides the reply, not the header.** *(Builder's call, from review.)* A refresh token that arrived in a cookie always gets cookies back; one that arrived as a Bearer header gets JSON back. This uses `get_jwt_request_location()`, and `X-Client` is ignored on these two endpoints. Otherwise a script injected into the web page could call refresh with `X-Client: mobile` and receive a readable 30-day token. `X-Client` only matters on register and login, which need the password anyway.
+- **On refresh and logout, the token's source decides the reply, not the header.** *(Builder's call, from review.)* A refresh token that arrived in a cookie always gets cookies back; one that arrived as a Bearer header gets JSON back. This uses `get_jwt_request_location()`, and `X-Client` is ignored on these two endpoints. Otherwise a script injected into the web page could call refresh with `X-Client: mobile` and receive a readable 30-day token. `X-Client` only matters on register, login, and guest, which need the password anyway.
 - **Refresh rotates:** the old row gets `used_at = now` and a new pair is issued. Possible outcomes:
   - **Valid token, row unused and not expired:** rotate and return the new pair.
   - **Row missing** (logged out, or cleaned up): 401 `"Please log in."`.
@@ -155,7 +204,7 @@ The user object is `{"id", "name", "email"}`. Validation (`validation.py`) and t
 
 For each request whose path starts with `/api`:
 
-1. Skip `OPTIONS` and the public endpoints: `auth.register`, `auth.login`, `auth.refresh`, `auth.logout`, `api.health`.
+1. Skip `OPTIONS` and the public endpoints: `auth.register`, `auth.login`, `auth.guest`, `auth.refresh`, `auth.logout`, `api.health`.
 2. Check for a valid **access** token from the cookie or the Bearer header (`verify_jwt_in_request()`; refresh tokens are rejected here). If it's missing, expired, invalid, the wrong type, or fails the CSRF check, or if the user in `sub` no longer exists, return **401** `{"error": "Please log in."}`.
 3. Put the user on `flask.g.user`.
 4. If `request.view_args` contains `household_id` and that household isn't owned by `g.user`, return **404** with the existing "Requested resource not found." message.
@@ -183,7 +232,7 @@ All `flask-jwt-extended` error callbacks (`unauthorized_loader`, `invalid_token_
 
 ## Rollout notes
 
-- Once this deploys, every existing web frontend call returns 401 until the web login PR ships, and existing households are hidden until claimed. Merge and deploy it together with, or just before, the web login PR.
+- Once this deploys, every existing web frontend call returns 401 until the web PR (guest start-up, Accounts button, login/register pages) ships, and existing households are hidden until claimed. Merge and deploy it together with, or just before, the web login PR.
 - Before merging, check Render: `generateValue` only applies if the service is managed by the Blueprint. Otherwise set `SECRET_KEY` by hand.
 - Teammates' local `backend/.env` needs `SECRET_KEY`.
 - Show the migration to the teammate who owns the Supabase schema. Mention that the existing tables have RLS off too; that's outside this PR.
