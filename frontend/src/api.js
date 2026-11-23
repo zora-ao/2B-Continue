@@ -220,13 +220,21 @@ function fromDashboard(data) {
   };
 }
 
-function fromLocation(location) {
-  return { key: location.key, name: location.name, sunHours: location.sun_hours };
+// A saved solar location: a searched place (or "My location") and its average daily sun hours.
+function fromPlace(place) {
+  return {
+    name: place.name,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    sunHours: place.sun_hours,
+    sunHoursEstimated: place.sun_hours_estimated,
+    isDefault: place.is_default,
+  };
 }
 
 function fromRecommendations(data) {
   return {
-    location: fromLocation(data.location),
+    location: fromPlace(data.location),
     installBudget: data.install_budget,
     usage: { monthlyKwh: data.usage.monthly_kwh, source: data.usage.source },
     systems: data.systems.map((system) => ({
@@ -279,7 +287,7 @@ function fromPerformance(data) {
 
 function fromSolarProfile(profile) {
   return {
-    locationKey: profile.location.key,
+    location: fromPlace(profile.location),
     installBudget: profile.install_budget,
     systemKw: profile.system_kw,
     panelWatts: profile.panel_watts,
@@ -360,21 +368,25 @@ export const api = {
     const data = await request(`${solarPath(householdId)}${query}`, options);
     return {
       profile: fromSolarProfile(data.profile),
-      locations: data.locations.map(fromLocation),
       recommendations: fromRecommendations(data.recommendations),
       mySystem: fromPerformance(data.my_system),
     };
   },
-  // profile may hold any of { locationKey, installBudget, systemKw }
+  // profile may hold any of { location: { name, latitude, longitude }, installBudget, systemKw }
   saveSolarProfile: async (householdId, profile) => {
     const body = {};
-    if ("locationKey" in profile) body.location_key = profile.locationKey;
+    if ("location" in profile) body.location = profile.location;
     if ("installBudget" in profile) body.install_budget = profile.installBudget;
     if ("systemKw" in profile) body.system_kw = profile.systemKw;
     const data = await request(`${solarPath(householdId)}/profile`, {
       method: "PUT", body: JSON.stringify(body),
     });
     return fromSolarProfile(data.item);
+  },
+  // Philippine places matching the text: [{ name, region, latitude, longitude }].
+  searchPlaces: async (householdId, query, options) => {
+    const data = await request(`${solarPath(householdId)}/places?q=${encodeURIComponent(query)}`, options);
+    return data.items;
   },
   getSolarRecommendations: async (householdId, options) => {
     const data = await request(`${solarPath(householdId)}/recommendations`, options);

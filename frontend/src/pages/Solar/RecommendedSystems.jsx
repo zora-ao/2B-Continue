@@ -3,21 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { formatNumber, formatPeso } from "@/lib/energy";
 import { USAGE_SOURCE_LABELS, coversText, paybackText } from "@/lib/solar";
 import { cn } from "@/lib/utils";
+import LocationPicker from "./LocationPicker";
 
 export default function RecommendedSystems({
+  householdId,
   recommendations,
-  locations,
-  locationKey,
+  location,
   onLocationChange,
   budgetText,
   onBudgetChange,
@@ -32,26 +26,21 @@ export default function RecommendedSystems({
         <div className="flex flex-col gap-1">
           <CardTitle className="font-heading text-lg font-semibold">Recommended systems</CardTitle>
           <CardDescription title={sourceText(usage)}>{basisText(usage)}</CardDescription>
+          <p className="text-sm">
+            {location.name}
+            {location.isDefault && " (default)"} · {formatNumber(location.sunHours)} sun-hours a day
+            <span className="text-muted-foreground">
+              {location.sunHoursEstimated ? " (estimate)" : " (last 12 months)"}
+            </span>
+          </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="solar-location" className="text-xs tracking-wide text-muted-foreground uppercase">
-              Location
-            </Label>
-            <Select value={locationKey} onValueChange={onLocationChange}>
-              <SelectTrigger id="solar-location" className="min-w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {locations.map((location) => (
-                  <SelectItem key={location.key} value={location.key}>
-                    {location.name} · {formatNumber(location.sunHours)} sun-hours
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <LocationPicker
+            householdId={householdId}
+            location={location}
+            onPick={onLocationChange}
+          />
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="solar-budget" className="text-xs tracking-wide text-muted-foreground uppercase">
