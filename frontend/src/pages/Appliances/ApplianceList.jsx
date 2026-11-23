@@ -21,7 +21,7 @@ function applyFilter(appliances, filter) {
   return appliances;
 }
 
-export default function ApplianceList({ appliances, onEdit, onDelete }) {
+export default function ApplianceList({ appliances, onEdit, onDelete, busy }) {
   const [filter, setFilter] = useState("all");
   const shown = applyFilter(appliances, filter);
 
@@ -66,6 +66,7 @@ export default function ApplianceList({ appliances, onEdit, onDelete }) {
             <ApplianceCard
               key={appliance.id}
               appliance={appliance}
+              busy={busy}
               onEdit={onEdit}
               onDelete={onDelete}
             />

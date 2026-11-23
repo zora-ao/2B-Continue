@@ -37,16 +37,16 @@ export function parseApplianceForm(form) {
   const quantity = toNumber(form.quantity);
 
   const errors = {};
-  if (name === "") {
-    errors.name = "Name is required";
+  if (name === "" || name.length > 120) {
+    errors.name = "Name is required and must be at most 120 characters";
   }
-  if (!(watts > 0)) {
-    errors.watts = "Watts must be more than 0";
+  if (!Number.isFinite(watts) || !(watts > 0 && watts <= 999999999.999) || !hasValidPrecision(watts)) {
+    errors.watts = "Enter positive watts with up to 3 decimal places";
   }
-  if (!(hoursPerDay >= 0 && hoursPerDay <= 24)) {
-    errors.hoursPerDay = "Hours must be between 0 and 24";
+  if (!(hoursPerDay >= 0 && hoursPerDay <= 24) || !hasValidPrecision(hoursPerDay)) {
+    errors.hoursPerDay = "Hours must be between 0 and 24 with up to 3 decimal places";
   }
-  if (!Number.isInteger(quantity) || quantity < 1) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 2147483647) {
     errors.quantity = "Quantity must be a whole number, 1 or more";
   }
 
@@ -83,4 +83,8 @@ function toNumber(text) {
     return NaN;
   }
   return Number(text);
+}
+
+function hasValidPrecision(value) {
+  return Math.abs(value * 1000 - Math.round(value * 1000)) < 0.000001;
 }

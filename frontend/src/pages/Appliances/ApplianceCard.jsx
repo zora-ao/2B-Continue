@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getTypeIcon } from "@/lib/appliances";
-import { formatKwh, formatPeso, monthlyCost, monthlyKwh } from "@/lib/energy";
+import { formatKwh, formatPeso } from "@/lib/energy";
 
-export default function ApplianceCard({ appliance, onEdit, onDelete }) {
+// The monthly kWh and cost come from the server (estimatedMonthlyKwh / Cost).
+export default function ApplianceCard({ appliance, onEdit, onDelete, busy }) {
   const TypeIcon = getTypeIcon(appliance.type);
 
   // "900 W · 4 h/day", or "5 × 9 W · 5 h/day" when there is more than one.
@@ -32,6 +33,7 @@ export default function ApplianceCard({ appliance, onEdit, onDelete }) {
 
         <div className="flex shrink-0 gap-1">
           <Button
+            disabled={busy}
             variant="ghost"
             size="icon-sm"
             aria-label={`Edit ${appliance.name}`}
@@ -40,6 +42,7 @@ export default function ApplianceCard({ appliance, onEdit, onDelete }) {
             <Pencil />
           </Button>
           <Button
+            disabled={busy}
             variant="ghost"
             size="icon-sm"
             aria-label={`Delete ${appliance.name}`}
@@ -55,7 +58,7 @@ export default function ApplianceCard({ appliance, onEdit, onDelete }) {
       <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
         <span className="text-muted-foreground">Monthly estimate</span>
         <span className="font-heading font-semibold">
-          {formatKwh(monthlyKwh(appliance))} · {formatPeso(monthlyCost(appliance))}
+          {formatKwh(appliance.estimatedMonthlyKwh)} · {formatPeso(appliance.estimatedMonthlyCost)}
         </span>
       </div>
     </Card>
