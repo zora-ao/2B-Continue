@@ -168,7 +168,7 @@ The **best fit** is the smallest system within your budget that covers at least 
 
 | | Link |
 | --- | --- |
-| 🌐 **Web app** | **TODO: add the Vercel URL here** |
+| 🌐 Web app | https://kuryenta-101.vercel.app/appliances |
 | ⚙️ API health check | https://twob-continue.onrender.com/api/health |
 
 **Demo login: not needed.** Opening the app starts a guest session automatically. To test accounts and household sharing, click **Create account** in the sidebar.
@@ -411,11 +411,11 @@ Most `GET` endpoints accept `?month=YYYY-MM` (default: the current month in Mani
 
 | Name | Role | GitHub |
 | --- | --- | --- |
-| Carl Jasper Ramos | TODO: role | [@zora-ao](https://github.com/zora-ao) |
-| Creon Perry Barcenas Talisic | TODO: role | [@creont28](https://github.com/creont28) |
-| Mark Angelo Maloto | TODO: role | [@markangelomaloto](https://github.com/markangelomaloto) |
-| Jouhann Cadawas | TODO: role | [@Hojannn](https://github.com/Hojannn) |
-| Rafael Pomique| TODO: role | [@leafexx](https://github.com/leafexx) |
+| Carl Jasper Ramos | TODO: Frontend | [@zora-ao](https://github.com/zora-ao) |
+| Creon Perry Barcenas Talisic | TODO: Backend | [@creont28](https://github.com/creont28) |
+| Mark Angelo Maloto | TODO: Concept & Documentation | [@markangelomaloto](https://github.com/markangelomaloto) |
+| Jouhann Cadawas | TODO: Backend | [@Hojannn](https://github.com/Hojannn) |
+| Rafael Pomique| TODO: Checker | [@leafexx](https://github.com/leafexx) |
 
 ### Contributing
 
