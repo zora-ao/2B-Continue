@@ -7,7 +7,6 @@ export const USAGE_SOURCE_LABELS = {
 };
 
 export function coversText(system) {
-  if (system.status === "over_budget") return "Over budget";
   if (system.coversPercent === null) return "—";
   return `~${Math.round(system.coversPercent)}% of bill`;
 }

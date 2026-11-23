@@ -32,6 +32,22 @@ export default function RecommendedSystems({
             <span className="text-muted-foreground">
               {location.sunHoursEstimated ? " (estimate)" : " (last 12 months)"}
             </span>
+            {!location.isDefault && location.sunHoursEstimated && (
+              <button
+                type="button"
+                disabled={updating}
+                className="ml-2 text-xs font-normal text-primary-text hover:underline disabled:opacity-50"
+                onClick={() =>
+                  onLocationChange({
+                    name: location.name,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  })
+                }
+              >
+                {updating ? "Refreshing..." : "Retry"}
+              </button>
+            )}
           </p>
         </div>
 

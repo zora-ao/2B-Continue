@@ -79,10 +79,16 @@ export default function SolarPage() {
     setError("");
     try {
       const profile = await api.saveSolarProfile(householdId, changes);
-      const recommendations = await api.getSolarRecommendations(householdId);
-      // Ignore stale responses when the user changed the inputs again meanwhile.
-      if (saveId === latestProfileSave.current) {
-        setSolar((current) => current && { ...current, profile, recommendations });
+      if ("location" in changes) {
+        // Location affects both recommendations and the panel chart's weather-based expected output.
+        const data = await api.getSolar(householdId, weekOf);
+        if (saveId === latestProfileSave.current) setSolar(data);
+      } else {
+        const recommendations = await api.getSolarRecommendations(householdId);
+        // Ignore stale responses when the user changed the inputs again meanwhile.
+        if (saveId === latestProfileSave.current) {
+          setSolar((current) => current && { ...current, profile, recommendations });
+        }
       }
     } catch (err) {
       setError(err.message);
@@ -111,6 +117,7 @@ export default function SolarPage() {
     setError("");
     try {
       await api.saveSolarProfile(householdId, { systemKw });
+      if (systemKw === null) setShowForm(false);
       setReloadCount((count) => count + 1);
       return true;
     } catch (err) {
@@ -147,7 +154,7 @@ export default function SolarPage() {
         title="Solar"
         subtitle="Find a system that fits your budget, then track how your panels perform."
         actions={
-          solar &&
+          mySystem &&
           !showForm && (
             <Button
               size="lg"
