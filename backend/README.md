@@ -1,5 +1,88 @@
 # EnergyWise backend
 
+## Auth API
+
+Base path: `/api/auth`. Logins use JWTs (`flask-jwt-extended`) and serve both the
+web app and the mobile app. Apply migration `f4b2d8c61a37` first. It adds `users`
+and `refresh_tokens` (both with row-level security on and no policies, so
+Supabase's Data API can't read them) and a nullable `households.user_id`.
+Nothing else changes.
+
+| Method | Path | Sends | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/register` | `{"name", "email", "password"}` | 201, tokens issued | 400 invalid, 409 email taken |
+| POST | `/login` | `{"email", "password"}` | 200, tokens issued | 400 invalid body, 401 wrong email/password, 429 locked |
+| POST | `/refresh` | the refresh token | 200, new tokens issued | 401 log in again, 409 already refreshed |
+| POST | `/logout` | the refresh token (optional) | 204 | never fails |
+| GET | `/me` | the access token | 200 `{"user"}` | 401 |
+
+`user` is `{"id", "name", "email"}`. Emails are trimmed and lowercased; names are
+1-120 characters; passwords are 8-128 characters and stored as Werkzeug scrypt
+hashes. Five wrong passwords lock the account for 15 minutes (429), even for the
+right password; a successful login resets the count.
+
+**Tokens.** An access token lasts 15 minutes; a refresh token lasts 30 days, and
+every refresh issues a new one with a fresh 30 days. Someone who opens the app at
+least once a month stays logged in. Tokens hold only the user id (`sub`), never a
+name or email. Refresh tokens are recorded by id in `refresh_tokens`; the tokens
+themselves are never stored.
+
+**Web app (cookies).** Register and login without `X-Client` set `HttpOnly`
+cookies (`SameSite=Lax`, `Secure` unless `FLASK_DEBUG=1`, 30-day `Max-Age`). The
+access cookie is sent to `/api`; the refresh cookie only to `/api/auth`. The body
+is just `{"user"}`. For POST/PUT/PATCH/DELETE, copy the readable
+`csrf_access_token` cookie into an `X-CSRF-TOKEN` header; for `/refresh` and
+`/logout`, use `csrf_refresh_token`. The browser calls the API through the
+Vite/Vercel `/api` proxy, so no CORS credentials setup is needed.
+
+**Mobile app (Bearer).** Send `X-Client: mobile` on register and login. The body
+is `{"user", "access_token", "refresh_token"}` and no cookies are set. Keep the
+tokens in the phone's secure storage (Keychain / Keystore). Send
+`Authorization: Bearer <access token>` on API calls, and
+`Authorization: Bearer <refresh token>` to `/refresh` and `/logout`. No CSRF
+header is needed.
+
+On `/refresh` and `/logout` the reply follows how the token arrived (cookie in,
+cookies out; Bearer in, JSON out), and `X-Client` is ignored there.
+
+**Client rule.** On a 401, call `/refresh` once, then retry the original request.
+- If refresh returns 401, show the login screen.
+- If refresh returns 409 (another tab or retry already refreshed in the last 30
+  seconds), the web app retries the original request once and the mobile app
+  shows login.
+
+If an already-used refresh token comes back more than 30 seconds later, it was
+copied: every refresh token for that user is deleted and all their devices must
+log in again.
+
+**Logout** deletes that device's refresh token and clears the web cookies. The
+access token still works for up to 15 minutes. Expired and old used refresh
+tokens are cleaned up when that user logs in.
+
+**Later: password reset/change must delete all of the user's refresh tokens.**
+
+**`SECRET_KEY`** signs the tokens (HS256) and must be set, or the app won't
+start. Use a random value of at least 32 characters in your local `backend/.env`.
+Render generates one (`render.yaml`) if the service is managed by the Blueprint;
+otherwise set it by hand.
+
+**Everything else requires login.** Every `/api` request except register, login,
+refresh, logout, and `/api/health` returns 401 `{"error": "Please log in."}`
+without a valid access token. A `household_id` in the URL that isn't the user's returns 404, so
+other users' ids can't be probed. `GET /api/households` lists only the user's
+households, and `POST /api/households` makes the new one theirs.
+
+**Households from before login** have no owner and are hidden from everyone. To
+give one to an account:
+
+```sql
+UPDATE households SET user_id = <user id> WHERE id = <household id>;
+```
+
+**Tests.** `pip install -r requirements-dev.txt`, point `TEST_DATABASE_URL` at a
+throwaway local Postgres database (only `localhost` is accepted), then run
+`python -m pytest tests -q` from `backend/`.
+
 ## Solar API
 
 Base path: `/api/households/<household_id>/solar`. No frontend files were
