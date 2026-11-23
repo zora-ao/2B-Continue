@@ -91,20 +91,31 @@ function fromSavedPlan(saved) {
   return { isStale: saved.is_stale, updatedAt: saved.updated_at, plan: fromPlan(saved.plan) };
 }
 
+const alertsPath = (householdId) => `/households/${householdId}/alerts`;
+
 function fromAlert(alert) {
   return {
     id: alert.id,
-    type: alert.type,
+    category: alert.category,
+    rule: alert.rule,
+    severity: alert.severity,
     title: alert.title,
-    date: alert.date,
-    kwh: alert.kwh,
-    limitKwh: alert.limit_kwh,
-    averageKwh: alert.average_kwh,
-    percentAboveAverage: alert.percent_above_average,
-    projectedBill: alert.projected_bill,
-    overBudgetBy: alert.over_budget_by,
-    reduceHours: alert.reduce_hours_per_day,
-    monthlySavings: alert.estimated_monthly_savings,
+    message: alert.message,
+    action: alert.action,
+    createdAt: alert.created_at,
+    isRead: alert.is_read,
+  };
+}
+
+function fromAlertRules(data) {
+  return {
+    rules: data.rules,
+    thresholds: {
+      dailyLimitKwh: data.thresholds.daily_limit_kwh,
+      monthlyBudget: data.thresholds.monthly_budget,
+      spikePercent: data.thresholds.unusual_spike_percent,
+      solarMinPercent: data.thresholds.solar_minimum_percent_of_expected,
+    },
   };
 }
 
@@ -309,4 +320,28 @@ export const api = {
       self_consumed_kwh: reading.selfConsumedKwh,
     }),
   }),
+
+  // The server only creates alerts when asked, so refresh before listing them.
+  refreshAlerts: (householdId) => request(`${alertsPath(householdId)}/refresh`, {
+    method: "POST", body: "{}",
+  }),
+  listAlerts: async (householdId, category, options) => {
+    const data = await request(`${alertsPath(householdId)}?category=${category}`, options);
+    return { items: data.items.map(fromAlert), counts: data.counts, unreadCount: data.unread_count };
+  },
+  markAlertRead: (householdId, id) => request(`${alertsPath(householdId)}/${id}`, {
+    method: "PATCH", body: JSON.stringify({ is_read: true }),
+  }),
+  markAllAlertsRead: async (householdId) => {
+    const data = await request(`${alertsPath(householdId)}/mark-all-read`, { method: "POST", body: "{}" });
+    return data.updated_count;
+  },
+  getAlertRules: async (householdId, options) => {
+    return fromAlertRules(await request(`${alertsPath(householdId)}/rules`, options));
+  },
+  updateAlertRules: async (householdId, changes) => {
+    return fromAlertRules(await request(`${alertsPath(householdId)}/rules`, {
+      method: "PATCH", body: JSON.stringify(changes),
+    }));
+  },
 };

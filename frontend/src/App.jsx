@@ -1,9 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
+import AlertsPage from "@/pages/Alerts/AlertsPage";
 import AppliancesPage from "@/pages/Appliances/AppliancesPage";
 import BudgetPage from "@/pages/Budget/BudgetPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
-import Placeholder from "@/pages/Placeholder";
 import SolarPage from "@/pages/Solar/SolarPage";
 
 export default function App() {
@@ -17,7 +17,7 @@ export default function App() {
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/appliances" element={<AppliancesPage />} />
           <Route path="/solar" element={<SolarPage />} />
-          <Route path="/alerts" element={<Placeholder title="Alerts" />} />
+          <Route path="/alerts" element={<AlertsPage />} />
         </Routes>
       </main>
     </div>
