@@ -1,4 +1,5 @@
 from .user import User
+from .refresh_token import RefreshToken
 from .household import Household
 from .appliance import Appliance
 from .budget_plan import BudgetPlan
