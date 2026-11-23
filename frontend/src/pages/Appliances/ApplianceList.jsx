@@ -10,7 +10,6 @@ const FILTERS = [
   { value: "flexible", label: "Flexible" },
 ];
 
-// Keeps only the appliances that match the chosen filter.
 function applyFilter(appliances, filter) {
   if (filter === "mustHave") {
     return appliances.filter((appliance) => appliance.isMustHave);
@@ -27,7 +26,6 @@ export default function ApplianceList({ appliances, onEdit, onDelete, busy }) {
 
   return (
     <section className="flex flex-col gap-4">
-      {/* Filter chips + daily total */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((option) => {
@@ -50,7 +48,6 @@ export default function ApplianceList({ appliances, onEdit, onDelete, busy }) {
         </p>
       </div>
 
-      {/* Cards, or an empty message */}
       {shown.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
           <Plug className="size-8" />

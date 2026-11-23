@@ -1,9 +1,4 @@
-// Talks to the Flask API. In development, Vite forwards /api to Flask
-// (see vite.config.js).
-//
-// The API uses snake_case (hours_per_day); components use camelCase
-// (hoursPerDay). toApi / fromApi below convert between them, so only
-// this file knows the API's field names.
+// The API uses snake_case; the app uses camelCase. Only this file converts between them.
 async function request(path, options = {}) {
   const response = await fetch(`/api${path}`, {
     ...options,
@@ -46,9 +41,6 @@ function fromApi(item) {
 const appliancePath = (householdId) => `/households/${householdId}/appliances`;
 const plannerPath = (householdId) => `/households/${householdId}/budget-planner`;
 
-// --- Budget planner -------------------------------------------------
-
-// What the page sends: { month, budget, style, adjustments: [{ id, hours }] }
 function toPlanRequest(request) {
   return {
     month: request.month,
@@ -61,7 +53,6 @@ function toPlanRequest(request) {
   };
 }
 
-// A plan calculated by the server.
 function fromPlan(plan) {
   return {
     month: plan.month,
@@ -118,7 +109,6 @@ export const api = {
     method: "DELETE",
   }),
 
-  // Defaults, an unsaved preview, and this month's saved plan (or null).
   getBudgetPlanner: async (householdId, options) => {
     const data = await request(plannerPath(householdId), options);
     return {
@@ -131,14 +121,12 @@ export const api = {
       savedPlan: fromSavedPlan(data.saved_plan),
     };
   },
-  // Calculates a plan without saving it.
   generateBudgetPlan: async (householdId, planRequest) => {
     const data = await request(`${plannerPath(householdId)}/generate`, {
       method: "POST", body: JSON.stringify(toPlanRequest(planRequest)),
     });
     return fromPlan(data.plan);
   },
-  // Saves the plan for that month (replaces any earlier one).
   saveBudgetPlan: async (householdId, planRequest) => {
     const data = await request(`${plannerPath(householdId)}/plan`, {
       method: "PUT", body: JSON.stringify(toPlanRequest(planRequest)),

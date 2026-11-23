@@ -7,10 +7,6 @@ import { PLAN_STYLES, energyAllowance, parseBudget } from "@/lib/budget";
 import { formatKwh, formatPeso } from "@/lib/energy";
 import { cn } from "@/lib/utils";
 
-// Left column: the budget, how much energy it buys, and the plan style.
-//   budget  – the monthly budget as typed (text)
-//   rate    – ₱ per kWh, from the household
-//   days    – days in this month
 export default function BudgetForm({
   budget,
   onBudgetChange,

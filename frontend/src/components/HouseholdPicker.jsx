@@ -6,8 +6,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Dropdown for choosing which household a page shows.
-// Hidden when there is only one household.
 export default function HouseholdPicker({ households, value, onChange, disabled }) {
   if (households.length < 2) {
     return null;

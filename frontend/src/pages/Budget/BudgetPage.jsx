@@ -11,16 +11,13 @@ import BudgetForm from "./BudgetForm";
 import BudgetTips from "./BudgetTips";
 import PlanTable from "./PlanTable";
 
-// The Budget Planner: set a monthly budget, let the server plan how many
-// hours each appliance should run, adjust it, and save the plan.
-// Saving keeps a monthly plan; it does not change the appliances' hours.
 export default function BudgetPage() {
   const households = useHouseholds();
   const { householdId } = households;
 
-  const [planner, setPlanner] = useState(null); // { defaults, preview, savedPlan }
-  const [plan, setPlan] = useState(null); // the plan on screen
-  const [budget, setBudget] = useState(""); // text, like every input
+  const [planner, setPlanner] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [budget, setBudget] = useState("");
   const [style, setStyle] = useState("balanced");
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -28,7 +25,6 @@ export default function BudgetPage() {
   const [justSaved, setJustSaved] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
 
-  // Load the planner for the chosen household.
   // Show this month's saved plan if there is one, otherwise a fresh preview.
   useEffect(() => {
     if (!householdId) return;
@@ -59,7 +55,7 @@ export default function BudgetPage() {
     setStyle(newPlan.style);
   }
 
-  // Every flexible row's current hours, so the server keeps them.
+  // Send every flexible row's hours: the server regenerates any row left out.
   function currentAdjustments(changedId, changedHours) {
     return plan.items
       .filter((item) => !item.isMustHave)
@@ -69,7 +65,6 @@ export default function BudgetPage() {
       }));
   }
 
-  // Runs one server call with the busy flag and error message handled.
   async function run(action) {
     setBusy(true);
     setError("");
@@ -121,7 +116,6 @@ export default function BudgetPage() {
     });
   }
 
-  // Back to the household's budget and a fresh balanced plan (unsaved).
   function handleReset() {
     setError("");
     setJustSaved(false);
@@ -216,7 +210,6 @@ export default function BudgetPage() {
   );
 }
 
-// One line about this month's saved plan.
 function SavedPlanStatus({ savedPlan, justSaved }) {
   if (justSaved) {
     return (

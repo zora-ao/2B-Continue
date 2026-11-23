@@ -13,7 +13,6 @@ const LINKS = [
 export default function Sidebar() {
   return (
     <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7">
-      {/* Logo */}
       <div className="mb-6 flex items-center gap-2.5">
         <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Zap className="size-[18px]" />
@@ -21,7 +20,6 @@ export default function Sidebar() {
         <span className="font-heading text-xl font-medium">EnergyWise</span>
       </div>
 
-      {/* Navigation */}
       {LINKS.map(({ to, label, icon: LinkIcon }) => (
         <NavLink
           key={to}

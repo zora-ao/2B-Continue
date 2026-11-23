@@ -145,7 +145,6 @@ export default function AppliancesPage() {
         </div>
       </div>}
 
-      {/* "Are you sure?" dialog for deleting */}
       <AlertDialog
         open={deleting !== null}
         onOpenChange={(open) => {

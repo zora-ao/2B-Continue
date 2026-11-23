@@ -7,9 +7,6 @@ import { roundHours } from "@/lib/budget";
 import { formatKwh, formatNumber, formatPeso } from "@/lib/energy";
 import { cn } from "@/lib/utils";
 
-// Right column: the plan from the server, with − / + to adjust hours.
-//   plan          – from api.generateBudgetPlan (items, totals, warnings)
-//   onHoursChange – called with (id, newHours)
 export default function PlanTable({ plan, onHoursChange, busy }) {
   const hasItems = plan.items.length > 0;
 
@@ -78,7 +75,6 @@ export default function PlanTable({ plan, onHoursChange, busy }) {
   );
 }
 
-// One appliance row. Rows the plan trimmed are highlighted.
 function PlanRow({ item, onHoursChange, busy }) {
   const TypeIcon = getTypeIcon(item.type);
   const hours = item.hoursPerDay;

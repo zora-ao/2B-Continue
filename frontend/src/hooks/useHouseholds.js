@@ -3,8 +3,6 @@ import { api } from "@/api";
 
 const SAVED_HOUSEHOLD_KEY = "energywise.householdId";
 
-// Loads the households and picks one: the last one used, or the first.
-// Pages then load their own data for `householdId`.
 export function useHouseholds() {
   const [households, setHouseholds] = useState([]);
   const [householdId, setHouseholdId] = useState("");
@@ -39,7 +37,6 @@ export function useHouseholds() {
     };
   }, [reloadCount]);
 
-  // Remember the choice for next time (and for the other pages).
   useEffect(() => {
     if (householdId) saveHousehold(householdId);
   }, [householdId]);
@@ -54,8 +51,6 @@ export function useHouseholds() {
   };
 }
 
-// Remembering the household is only a convenience, so storage errors
-// (private browsing, blocked storage) are ignored.
 function readSavedHousehold() {
   try {
     return localStorage.getItem(SAVED_HOUSEHOLD_KEY);
@@ -68,6 +63,6 @@ function saveHousehold(id) {
   try {
     localStorage.setItem(SAVED_HOUSEHOLD_KEY, id);
   } catch {
-    // ignore
+    // Storage can be blocked (private browsing); remembering is optional.
   }
 }
