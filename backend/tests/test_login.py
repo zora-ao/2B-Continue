@@ -29,6 +29,7 @@ def test_login_success_normalizes_email(client, ana):
     ("ana@example.com", "wrong-pass"),
     ("nobody@example.com", "correct-horse"),
     ("not-an-email", "correct-horse"),
+    ("a\x00b@example.com", "correct-horse"),
 ])
 def test_bad_credentials_same_message(client, ana, email, password):
     response = login(client, email, password)

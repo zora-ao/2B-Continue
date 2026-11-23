@@ -7,7 +7,7 @@ def check_keys(data, allowed):
 
 
 def normalize_email(value):
-    if not isinstance(value, str):
+    if not isinstance(value, str) or "\x00" in value:
         raise ValidationError("Enter a valid email address.")
     email = value.strip().lower()
     local, at, domain = email.partition("@")
@@ -26,7 +26,7 @@ def check_password(value):
 def validate_registration(data):
     check_keys(data, {"name", "email", "password"})
     name = data["name"]
-    if not isinstance(name, str) or not 1 <= len(name.strip()) <= 120:
+    if not isinstance(name, str) or "\x00" in name or not 1 <= len(name.strip()) <= 120:
         raise ValidationError("Name must contain 1-120 characters.")
     return {"name": name.strip(), "email": normalize_email(data["email"]),
             "password": check_password(data["password"])}

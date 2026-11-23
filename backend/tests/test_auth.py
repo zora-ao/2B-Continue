@@ -40,6 +40,8 @@ def test_duplicate_email_any_case_is_409(client):
     {"name": "Ana", "email": "ana@example.com", "password": "short"},
     {"name": "Ana", "email": "ana@example.com", "password": "x" * 129},
     {"name": "Ana", "email": "ana@example.com", "password": "correct-horse", "is_admin": True},
+    {"name": "A\x00", "email": "ana@example.com", "password": "correct-horse"},
+    {"name": "Ana", "email": "a\x00b@example.com", "password": "correct-horse"},
 ])
 def test_register_rejects_bad_input(client, body):
     response = client.post("/api/auth/register", json=body)
