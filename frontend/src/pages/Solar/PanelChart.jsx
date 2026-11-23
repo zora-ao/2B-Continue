@@ -159,13 +159,24 @@ function SystemSetup({ currentKw, onSave, onCancel, saving }) {
               onChange={(event) => setText(event.target.value)}
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Track my panels"}
+              {saving ? "Saving..." : currentKw ? "Save" : "Track my panels"}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" disabled={saving} onClick={onCancel}>
                 Cancel
+              </Button>
+            )}
+            {currentKw && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-danger hover:text-danger"
+                disabled={saving}
+                onClick={() => onSave(null)}
+              >
+                Remove
               </Button>
             )}
           </div>

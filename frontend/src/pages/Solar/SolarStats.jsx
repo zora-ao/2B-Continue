@@ -1,6 +1,6 @@
 import { CircleCheck, Sun, TriangleAlert, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { formatKwh, formatNumber, formatPeso } from "@/lib/energy";
+import { formatKwh, formatPeso } from "@/lib/energy";
 
 export default function SolarStats({ mySystem }) {
   const { today, savedThisMonth, alerts } = mySystem;
