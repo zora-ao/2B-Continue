@@ -42,6 +42,10 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
 1. **Tailwind CSS v4 — chosen** (user's call). Utility classes in the JSX, theme colors defined once from the Figma tokens. The starter project currently uses plain CSS, so Tailwind will be added.
 2. Plain CSS files per component. No new tool, but more files and more naming to keep consistent.
 
+**Components** (added after Task 1, user's call)
+1. **shadcn/ui (Radix base) — chosen.** Accessible inputs, select, checkbox and confirm dialog out of the box; source lives in `src/components/ui/` so we can restyle it. Figma colors are mapped onto shadcn's standard theme variables, so there is one color system. Icons come from `lucide-react` (the same icon set used in Figma).
+2. Hand-made Button/Card/Badge/Icon (built in Task 1). Fewer dependencies, but form controls and dialogs would need to be written by hand.
+
 ## Decided
 
 - **Stack:** existing React 19 + Vite 7. Add `tailwindcss` + `@tailwindcss/vite` (v4) and `react-router-dom`.
@@ -68,12 +72,11 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
   ├── App.jsx                 routes + sidebar layout
   ├── api.js                  appliance functions (localStorage for now)
   ├── index.css               Tailwind import + theme tokens
+  ├── lib/utils.js            shadcn's cn() helper
   ├── components/
   │   ├── Sidebar.jsx
-  │   ├── Card.jsx
-  │   ├── Button.jsx
-  │   ├── Badge.jsx
-  │   └── Icon.jsx            small inline SVG icons (lucide paths)
+  │   └── ui/                 shadcn components: button, card, badge, input,
+  │                           label, select, checkbox, alert-dialog
   ├── pages/
   │   ├── Appliances/
   │   │   ├── AppliancesPage.jsx
@@ -91,4 +94,4 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
 
 - Exact Tailwind class choices, as long as the result matches the Figma frame.
 - Empty state wording when there are no appliances.
-- Whether delete asks for confirmation (a simple `window.confirm` is fine).
+- Delete asks for confirmation with a shadcn `AlertDialog`.

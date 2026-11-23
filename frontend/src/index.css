@@ -1,17 +1,102 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Colors and fonts copied from the Figma "EnergyWise Colors" tokens.
-   Each --color-* becomes a Tailwind class, e.g. --color-surface → bg-surface. */
-@theme {
-  --color-base: #0a1020;
-  --color-surface: #111a2e;
-  --color-raised: #18233b;
-  --color-line: #25324d;
+/* shadcn components use dark: styles; <html class="dark"> turns them on. */
+@custom-variant dark (&:is(.dark *));
 
-  --color-ink: #e8eef8;
-  --color-muted: #8b98b3;
-  --color-on-accent: #04140d;
+/*
+  EnergyWise theme (dark only). Values come from the Figma "EnergyWise Colors"
+  tokens, written into shadcn's standard variable names so every shadcn
+  component picks them up automatically.
 
+  Figma token        → shadcn variable     → Tailwind class
+  bg/base            → --background        → bg-background
+  bg/surface         → --card              → bg-card
+  bg/surface-raised  → --secondary         → bg-secondary
+  border/default     → --border            → border-border
+  text/primary       → --foreground        → text-foreground
+  text/muted         → --muted-foreground  → text-muted-foreground
+  accent/green       → --primary           → bg-primary / text-primary
+*/
+:root {
+  --background: #0a1020;
+  --foreground: #e8eef8;
+  --card: #111a2e;
+  --card-foreground: #e8eef8;
+  --popover: #18233b;
+  --popover-foreground: #e8eef8;
+  --primary: #22e39b;
+  --primary-foreground: #04140d;
+  --secondary: #18233b;
+  --secondary-foreground: #e8eef8;
+  --muted: #18233b;
+  --muted-foreground: #8b98b3;
+  --accent: #18233b;
+  --accent-foreground: #e8eef8;
+  --destructive: #f43f5e;
+  --border: #25324d;
+  --input: #25324d;
+  --ring: #22e39b;
+  --radius: 0.875rem;
+
+  --chart-1: #22e39b;
+  --chart-2: #facc15;
+  --chart-3: #38bdf8;
+  --chart-4: #f59e0b;
+  --chart-5: #f43f5e;
+
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e8eef8;
+  --sidebar-primary: #22e39b;
+  --sidebar-primary-foreground: #04140d;
+  --sidebar-accent: #0f3b2e;
+  --sidebar-accent-foreground: #22e39b;
+  --sidebar-border: #25324d;
+  --sidebar-ring: #22e39b;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Fonts (loaded in index.html) */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  /* shadcn colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Extra EnergyWise status colors (not part of shadcn) */
   --color-green: #22e39b;
   --color-green-soft: #0f3b2e;
   --color-yellow: #facc15;
@@ -22,16 +107,26 @@
   --color-danger-soft: #3d1220;
   --color-info: #38bdf8;
 
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "DM Sans", sans-serif;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
 }
 
-body {
-  @apply bg-base font-body text-ink antialiased;
-}
-
-h1,
-h2,
-h3 {
-  @apply font-display;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
 }

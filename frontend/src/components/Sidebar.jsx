@@ -1,47 +1,43 @@
 import { NavLink } from "react-router-dom";
-import Icon from "./Icon.jsx";
+import { Bell, LayoutDashboard, Plug, Sun, Wallet, Zap } from "lucide-react";
 
 const LINKS = [
-  { to: "/", label: "Dashboard", icon: "dashboard" },
-  { to: "/budget", label: "Budget Planner", icon: "wallet" },
-  { to: "/appliances", label: "Appliances", icon: "plug" },
-  { to: "/solar", label: "Solar", icon: "sun" },
-  { to: "/alerts", label: "Alerts", icon: "bell" },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/budget", label: "Budget Planner", icon: Wallet },
+  { to: "/appliances", label: "Appliances", icon: Plug },
+  { to: "/solar", label: "Solar", icon: Sun },
+  { to: "/alerts", label: "Alerts", icon: Bell },
 ];
 
 export default function Sidebar() {
   return (
-    <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 border-r border-line bg-surface px-5 py-7">
+    <aside className="flex w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7">
       {/* Logo */}
       <div className="mb-6 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green text-on-accent">
-          <Icon name="zap" size={18} />
+        <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Zap className="size-[18px]" />
         </div>
-        <span className="font-display text-xl font-medium">EnergyWise</span>
+        <span className="font-heading text-xl font-medium">EnergyWise</span>
       </div>
 
       {/* Navigation */}
-      {LINKS.map((link) => (
+      {LINKS.map(({ to, label, icon: LinkIcon }) => (
         <NavLink
-          key={link.to}
-          to={link.to}
-          end={link.to === "/"}
+          key={to}
+          to={to}
+          end={to === "/"}
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition ${
-              isActive ? "bg-green-soft text-green" : "text-muted hover:text-ink"
+              isActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`
           }
         >
-          <Icon name={link.icon} size={20} />
-          {link.label}
+          <LinkIcon className="size-5" />
+          {label}
         </NavLink>
       ))}
-
-      {/* SDG 7 card, pushed to the bottom */}
-      <div className="mt-auto rounded-2xl bg-green-soft p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-green">SDG 7</p>
-        <p className="mt-1 text-xs text-ink">Affordable and clean energy for every household.</p>
-      </div>
     </aside>
   );
 }

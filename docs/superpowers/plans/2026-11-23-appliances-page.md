@@ -21,6 +21,7 @@
 - Appliance shape: `{ id, name, type, watts, hoursPerDay, quantity, isMustHave }`; `type` ∈ `aircon | refrigerator | tv | fan | lights | other`.
 - Validation: name required; watts > 0; hours per day 0–24; quantity ≥ 1.
 - localStorage key: `energywise.appliances`.
+- **UI components (amended after Task 1): use shadcn from `@/components/ui/*`** — `Button` (use `size="lg"` for page buttons), `Card`/`CardHeader`/`CardTitle`/`CardContent`, `Badge` (EnergyWise variants `success | warning | danger | solar`), `Input`, `Label`, `Select`, `Checkbox`, `AlertDialog`. Icons from `lucide-react`. Theme classes: `bg-background`, `bg-card`, `bg-secondary`, `border-border`, `text-foreground`, `text-muted-foreground`, `bg-primary`/`text-primary-foreground`, plus `green(-soft)`, `yellow(-soft)`, `warning(-soft)`, `danger(-soft)`, `info`; fonts `font-sans` (DM Sans) and `font-heading` (Space Grotesk). Where Tasks 4–5 below say `Card`, `Badge tone=…`, `Button variant=…` or `Icon`, use these instead.
 
 ## Review Focus
 
@@ -254,7 +255,7 @@ git commit -m "feat(frontend): store appliances in browser storage via api.js"
 - Create: `frontend/src/pages/Appliances/ApplianceList.jsx`
 
 **Interfaces:**
-- Consumes: `Card`, `Badge`, `Button`, `Icon` (Task 1); `monthlyKwh`, `monthlyCost`, `totalDailyKwh`, `formatKwh`, `formatPeso`, `APPLIANCE_TYPES` (Task 2).
+- Consumes: shadcn `Card`, `Badge` (`variant="success"`), `Button` (`variant="ghost" size="icon-sm"` for edit/delete) from `@/components/ui/*`; lucide icons (`AirVent`, `Refrigerator`, `Tv`, `Fan`, `Lightbulb`, `Plug`, `Pencil`, `Trash2`) mapped by `type` in a small `TYPE_ICONS` object; `monthlyKwh`, `monthlyCost`, `totalDailyKwh`, `formatKwh`, `formatPeso`, `APPLIANCE_TYPES` (Task 2).
 - Produces:
   - `<ApplianceCard appliance onEdit={(appliance) => void} onDelete={(id) => void} />`: icon tile by `type`, name, `"900 W · 4 h/day"` (prefix `"5 × "` when quantity > 1), green `MUST-HAVE` badge when `isMustHave`, bottom row "Monthly estimate" + `"108 kWh · ₱1,296"`, small Edit and Delete icon buttons.
   - `<ApplianceList appliances onEdit onDelete />`: filter chips `All (n)`, `Must-have (n)`, `Flexible (n)` (local state, default All), right-aligned `"Total ≈ 6.9 kWh / day"` using `formatKwh(totalDailyKwh(...))`, 2-column grid of cards (1 column under 1024px). Empty state when the filtered list is empty: icon + "No appliances yet. Add your first one using the form." (for All) or "Nothing here for this filter." (other filters).
@@ -283,10 +284,10 @@ git commit -m "feat(frontend): add appliance card and list with filters"
 - Modify: `frontend/src/App.jsx` (route `/appliances` → `AppliancesPage`)
 
 **Interfaces:**
-- Consumes: `EMPTY_FORM`, `parseApplianceForm`, `applianceToForm`, `APPLIANCE_TYPES` (Task 2); `api.listAppliances/addAppliance/updateAppliance/deleteAppliance` (Task 3); `ApplianceList` (Task 4).
+- Consumes: shadcn `Card`, `Input`, `Label`, `Select`, `Checkbox`, `Button`, `AlertDialog`; `EMPTY_FORM`, `parseApplianceForm`, `applianceToForm`, `APPLIANCE_TYPES` (Task 2); `api.listAppliances/addAppliance/updateAppliance/deleteAppliance` (Task 3); `ApplianceList` (Task 4).
 - Produces:
   - `<ApplianceForm editing={Appliance|null} onSubmit={(applianceData) => void} onCancel={() => void} />`: controlled inputs held in one `form` state object; fields: Name (text), Type (select from `APPLIANCE_TYPES`), Power (number, "W" suffix), Hours per day (number, step 0.5, "h" suffix), Quantity (number, step 1), Must-have checkbox with label "Must-have (never cut by the planner)". On submit calls `parseApplianceForm`; shows each error in `text-danger` under its field; on success calls `onSubmit(appliance)` and resets to `EMPTY_FORM`. Live preview line under the fields when valid: `"≈ 3.6 kWh/day · ₱1,296/month"`. Title "Add appliance" / "Edit appliance"; submit button "Save appliance" / "Save changes"; Cancel shown only when editing. When `editing` changes, load it with `applianceToForm`. Disabled secondary button at the top: camera icon + "Scan appliance (coming soon)".
-  - `AppliancesPage`: header "Appliances" + subtitle "Type in your appliances to see how much each one costs."; loads list with `api.listAppliances()` in `useEffect`; holds `appliances` and `editing` state; add/update/delete call `api` then refresh the list; delete asks `window.confirm("Delete <name>?")`. Layout: form card 400px on the left, list on the right; stacks below 1024px.
+  - `AppliancesPage`: header "Appliances" + subtitle "Type in your appliances to see how much each one costs."; loads list with `api.listAppliances()` in `useEffect`; holds `appliances` and `editing` state; add/update/delete call `api` then refresh the list; delete asks for confirmation in a shadcn `AlertDialog` ("Delete <name>?", buttons "Cancel" / "Delete"). Layout: form card 400px on the left, list on the right; stacks below 1024px.
 
 - [ ] **Step 1: Build both components and wire the route**
 
