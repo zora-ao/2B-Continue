@@ -1,11 +1,47 @@
 // The API uses snake_case; the app uses camelCase. Only this file converts between them.
-async function request(path, options = {}) {
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// These answer 401 for a wrong password or a dead login; refreshing would not help.
+const NO_REFRESH_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"]);
+
+// The login tokens live in HttpOnly cookies. Only the CSRF cookies are readable, by design.
+function readCookie(name) {
+  const row = document.cookie.split("; ").find((item) => item.startsWith(`${name}=`));
+  return row ? decodeURIComponent(row.slice(name.length + 1)) : "";
+}
+
+function send(path, options) {
   // FormData (photo uploads) must let the browser set its own multipart header.
   const jsonHeader = options.body instanceof FormData ? {} : { "Content-Type": "application/json" };
-  const response = await fetch(`/api${path}`, {
+  const method = (options.method || "GET").toUpperCase();
+  const csrfHeader = WRITE_METHODS.has(method) ? { "X-CSRF-TOKEN": readCookie("csrf_access_token") } : {};
+  return fetch(`/api${path}`, {
     ...options,
-    headers: { ...jsonHeader, ...options.headers },
+    headers: { ...jsonHeader, ...csrfHeader, ...options.headers },
   });
+}
+
+// The access login lasts 15 minutes. Parallel 401s share one refresh.
+let refreshing = null;
+function refreshLogin() {
+  refreshing ??= fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },
+  })
+    // 409: another tab refreshed a moment ago, so its new cookies are already set.
+    .then((response) => response.ok || response.status === 409)
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+async function request(path, options = {}) {
+  let response = await send(path, options);
+  if (response.status === 401 && !NO_REFRESH_PATHS.has(path)) {
+    if (await refreshLogin()) response = await send(path, options);
+    if (response.status === 401) window.dispatchEvent(new Event("auth:expired"));
+  }
   if (response.status === 204) {
     return null; // e.g. after DELETE: success, nothing to read
   }
@@ -367,5 +403,18 @@ export const api = {
   getScanSession: (code, options) => request(scanSessionPath(code), options),
   sendScanPhoto: (code, photo) => request(`${scanSessionPath(code)}/photo`, {
     method: "POST", body: photoForm(photo),
+  }),
+
+  // Login: the server keeps the tokens in cookies and returns only { user }.
+  me: async (options) => (await request("/auth/me", options)).user,
+  login: async (credentials) => (await request("/auth/login", {
+    method: "POST", body: JSON.stringify(credentials),
+  })).user,
+  register: async (account) => (await request("/auth/register", {
+    method: "POST", body: JSON.stringify(account),
+  })).user,
+  // Logout reads the refresh token, so it needs the refresh CSRF value.
+  logout: () => request("/auth/logout", {
+    method: "POST", headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },
   }),
 };
