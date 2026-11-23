@@ -9,6 +9,7 @@ from .blueprints.api.routes import api
 from .blueprints.appliances import appliances_bp
 from .blueprints.households import households_bp
 from .blueprints.planning import planning_bp
+from .blueprints.dashboard import dashboard_bp
 from .errors import register_error_handlers
 from .extensions import db, migrate
 
@@ -44,4 +45,5 @@ def create_app(test_config=None) -> Flask:
     app.register_blueprint(appliances_bp, url_prefix="/api/households/<int:household_id>/appliances")
     app.register_blueprint(households_bp, url_prefix="/api/households")
     app.register_blueprint(planning_bp, url_prefix="/api/households/<int:household_id>/budget-planner")
+    app.register_blueprint(dashboard_bp, url_prefix="/api/households/<int:household_id>/dashboard")
     return app
