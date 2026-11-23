@@ -19,3 +19,6 @@ services:
       # Supabase > Connect: Render can't reach the direct (IPv6) address.
       - key: DATABASE_URL
         sync: false
+      # Signs the login session cookie. Render generates a random value once.
+      - key: SECRET_KEY
+        generateValue: true
