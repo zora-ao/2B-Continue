@@ -4,7 +4,7 @@ import AlertsPage from "@/pages/Alerts/AlertsPage";
 import AppliancesPage from "@/pages/Appliances/AppliancesPage";
 import BudgetPage from "@/pages/Budget/BudgetPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
-import Placeholder from "@/pages/Placeholder";
+import SolarPage from "@/pages/Solar/SolarPage";
 
 export default function App() {
   return (
@@ -16,7 +16,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/appliances" element={<AppliancesPage />} />
-          <Route path="/solar" element={<Placeholder title="Solar" />} />
+          <Route path="/solar" element={<SolarPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
         </Routes>
       </main>

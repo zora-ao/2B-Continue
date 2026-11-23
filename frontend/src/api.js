@@ -41,6 +41,7 @@ function fromApi(item) {
 const appliancePath = (householdId) => `/households/${householdId}/appliances`;
 const plannerPath = (householdId) => `/households/${householdId}/budget-planner`;
 const dashboardPath = (householdId) => `/households/${householdId}/dashboard`;
+const solarPath = (householdId) => `/households/${householdId}/solar`;
 
 function toPlanRequest(request) {
   return {
@@ -162,6 +163,72 @@ function fromDashboard(data) {
   };
 }
 
+function fromLocation(location) {
+  return { key: location.key, name: location.name, sunHours: location.sun_hours };
+}
+
+function fromRecommendations(data) {
+  return {
+    location: fromLocation(data.location),
+    installBudget: data.install_budget,
+    usage: { monthlyKwh: data.usage.monthly_kwh, source: data.usage.source },
+    systems: data.systems.map((system) => ({
+      kw: system.system_kw,
+      panelCount: system.panel_count,
+      panelWatts: system.panel_watts,
+      cost: system.estimated_cost,
+      monthlySavings: system.monthly_savings,
+      paybackYears: system.payback_years,
+      coversPercent: system.covers_percent,
+      status: system.status, // "best_fit" | "available" | "over_budget"
+    })),
+  };
+}
+
+function fromSolarAlert(alert) {
+  return { id: alert.id, title: alert.title, message: alert.message, date: alert.date };
+}
+
+function fromPerformance(data) {
+  if (!data) return null;
+  return {
+    systemKw: data.system_kw,
+    weatherSource: data.weather_source,
+    week: {
+      startDate: data.week.start_date,
+      endDate: data.week.end_date,
+      days: data.week.days.map((day) => ({
+        date: day.date,
+        weekday: day.weekday,
+        actualKwh: day.actual_kwh,
+        expectedKwh: day.expected_kwh,
+        percentOfExpected: day.percent_of_expected,
+        isFuture: day.is_future,
+        lowOutput: day.low_output,
+      })),
+    },
+    today: {
+      generatedKwh: data.today.generated_kwh,
+      expectedKwh: data.today.expected_kwh,
+      percentOfExpected: data.today.percent_of_expected,
+    },
+    savedThisMonth: {
+      amount: data.saved_this_month.amount,
+      billReducedPercent: data.saved_this_month.bill_reduced_percent,
+    },
+    alerts: data.alerts.map(fromSolarAlert),
+  };
+}
+
+function fromSolarProfile(profile) {
+  return {
+    locationKey: profile.location.key,
+    installBudget: profile.install_budget,
+    systemKw: profile.system_kw,
+    panelWatts: profile.panel_watts,
+  };
+}
+
 export const api = {
   health: () => request("/health"),
   listHouseholds: () => request("/households"),
@@ -218,6 +285,41 @@ export const api = {
       method: "POST", body: JSON.stringify({ date: reading.date, [field]: reading.kwh }),
     });
   },
+
+  getSolar: async (householdId, weekOf, options) => {
+    const query = weekOf ? `?week_of=${encodeURIComponent(weekOf)}` : "";
+    const data = await request(`${solarPath(householdId)}${query}`, options);
+    return {
+      profile: fromSolarProfile(data.profile),
+      locations: data.locations.map(fromLocation),
+      recommendations: fromRecommendations(data.recommendations),
+      mySystem: fromPerformance(data.my_system),
+    };
+  },
+  // profile may hold any of { locationKey, installBudget, systemKw }
+  saveSolarProfile: async (householdId, profile) => {
+    const body = {};
+    if ("locationKey" in profile) body.location_key = profile.locationKey;
+    if ("installBudget" in profile) body.install_budget = profile.installBudget;
+    if ("systemKw" in profile) body.system_kw = profile.systemKw;
+    const data = await request(`${solarPath(householdId)}/profile`, {
+      method: "PUT", body: JSON.stringify(body),
+    });
+    return fromSolarProfile(data.item);
+  },
+  getSolarRecommendations: async (householdId, options) => {
+    const data = await request(`${solarPath(householdId)}/recommendations`, options);
+    return fromRecommendations(data);
+  },
+  // reading is { date, generationKwh, selfConsumedKwh (optional) }
+  logSolarReading: (householdId, reading) => request(`${solarPath(householdId)}/readings`, {
+    method: "POST",
+    body: JSON.stringify({
+      date: reading.date,
+      generation_kwh: reading.generationKwh,
+      self_consumed_kwh: reading.selfConsumedKwh,
+    }),
+  }),
 
   // The server only creates alerts when asked, so refresh before listing them.
   refreshAlerts: (householdId) => request(`${alertsPath(householdId)}/refresh`, {
