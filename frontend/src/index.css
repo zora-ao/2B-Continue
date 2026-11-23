@@ -171,3 +171,9 @@ progress.loading-spinner::-moz-progress-bar {
     rotate: 1turn;
   }
 }
+
+/* Sibling cards fade in one after another, capped at the 5th. "of" counts only cards, so a lone card never waits. */
+[data-slot="card"]:nth-child(2 of [data-slot="card"]) { --tw-animation-delay: 50ms; }
+[data-slot="card"]:nth-child(3 of [data-slot="card"]) { --tw-animation-delay: 100ms; }
+[data-slot="card"]:nth-child(4 of [data-slot="card"]) { --tw-animation-delay: 150ms; }
+[data-slot="card"]:nth-child(n + 5 of [data-slot="card"]) { --tw-animation-delay: 200ms; }
