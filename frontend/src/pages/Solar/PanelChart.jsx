@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 export default function PanelChart({ mySystem, onPrevWeek, onNextWeek, canGoNext, onSaveSystem, saving, busy }) {
   const [editing, setEditing] = useState(false);
+  const [activeDate, setActiveDate] = useState(null);
 
   if (!mySystem || editing) {
     return (
@@ -28,6 +29,7 @@ export default function PanelChart({ mySystem, onPrevWeek, onNextWeek, canGoNext
   const { days } = mySystem.week;
   const maxKwh = Math.max(1, ...days.map((day) => Math.max(day.actualKwh ?? 0, day.expectedKwh ?? 0))) * 1.1;
   const hasActual = days.some((day) => day.actualKwh !== null);
+  const activeDay = days.find((day) => day.date === activeDate) ?? null;
 
   return (
     <Card className="h-full gap-5 p-6">
@@ -78,31 +80,80 @@ export default function PanelChart({ mySystem, onPrevWeek, onNextWeek, canGoNext
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-3 px-0">
-        <div className={cn("relative flex-1", busy && "opacity-60")}>
-          <div className="flex h-64 items-end gap-3 sm:gap-6">
-            {days.map((day) => (
-              <DayBars key={day.date} day={day} maxKwh={maxKwh} />
-            ))}
+        <div className={cn("flex flex-1 gap-2", busy && "opacity-60")}>
+          {/* Subtle y-axis ticks (max, mid, 0) */}
+          <div className="flex h-64 w-10 shrink-0 flex-col justify-between text-right text-[11px] tabular-nums text-muted-foreground">
+            <span>{formatNumber(maxKwh)}</span>
+            <span>{formatNumber(maxKwh / 2)}</span>
+            <span>0</span>
           </div>
-          {!hasActual && (
-            <p className="absolute inset-x-0 top-6 text-center text-sm text-muted-foreground">
-              No readings this week. Use “Add reading” to log your panels' output.
-            </p>
-          )}
+
+          <div className="relative min-w-0 flex-1">
+            <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
+              <div className="border-t border-border/40" />
+              <div className="border-t border-border/40" />
+              <div className="border-t border-border/60" />
+            </div>
+
+            <div
+              className="relative flex h-64 items-end gap-2 sm:gap-4"
+              onMouseLeave={() => setActiveDate(null)}
+            >
+              {days.map((day) => (
+                <DayBars
+                  key={day.date}
+                  day={day}
+                  maxKwh={maxKwh}
+                  isActive={activeDate === day.date}
+                  onHover={() => setActiveDate(day.date)}
+                  onSelect={() => setActiveDate((current) => (current === day.date ? null : day.date))}
+                />
+              ))}
+            </div>
+            {!hasActual && (
+              <p className="pointer-events-none absolute inset-x-0 top-6 text-center text-sm text-muted-foreground">
+                No readings this week. Use “Add reading” to log your panels' output.
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex gap-3 sm:gap-6">
+
+        <div className="flex gap-2 pl-12 sm:gap-4">
           {days.map((day) => (
-            <span key={day.date} className="flex-1 text-center text-xs text-muted-foreground">
+            <span
+              key={day.date}
+              className={cn(
+                "flex-1 text-center text-xs transition-colors",
+                activeDate === day.date ? "font-medium text-foreground" : "text-muted-foreground",
+              )}
+            >
               {day.weekday}
             </span>
           ))}
         </div>
+
+        <p className="min-h-4 text-right text-xs tabular-nums text-muted-foreground">
+          {activeDay ? (
+            <span className="font-medium text-foreground">
+              {activeDay.weekday} ·{" "}
+              {activeDay.actualKwh !== null ? `Actual ${formatKwh(activeDay.actualKwh)}` : "Not logged"}
+              {activeDay.expectedKwh !== null && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}· Expected {formatKwh(activeDay.expectedKwh)}
+                  {activeDay.percentOfExpected !== null && ` (${Math.round(activeDay.percentOfExpected)}%)`}
+                </span>
+              )}
+            </span>
+          ) : (
+            "Hover or tap a day to inspect"
+          )}
+        </p>
       </CardContent>
     </Card>
   );
 }
 
-function DayBars({ day, maxKwh }) {
+function DayBars({ day, maxKwh, isActive, onHover, onSelect }) {
   const height = (kwh) => `${(kwh / maxKwh) * 100}%`;
   const label = [
     day.actualKwh !== null ? `Actual ${formatKwh(day.actualKwh)}` : "Not logged",
@@ -111,7 +162,16 @@ function DayBars({ day, maxKwh }) {
   ].filter(Boolean).join(", ");
 
   return (
-    <div className="flex h-full flex-1 items-end justify-center gap-1" title={label} aria-label={`${day.weekday}: ${label}`}>
+    <div
+      className={cn(
+        "flex h-full flex-1 cursor-pointer items-end justify-center gap-1 rounded-t-md px-0.5 transition-colors",
+        isActive && "bg-secondary/60",
+      )}
+      title={label}
+      aria-label={`${day.weekday}: ${label}`}
+      onMouseEnter={onHover}
+      onClick={onSelect}
+    >
       <div
         className={cn("w-1/2 max-w-5 rounded-t-md bg-border", day.isFuture && "opacity-50")}
         style={{ height: day.expectedKwh !== null ? height(day.expectedKwh) : 0 }}

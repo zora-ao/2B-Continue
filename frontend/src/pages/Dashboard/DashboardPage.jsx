@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
+import { useToast } from "@/hooks/useToast";
 import { monthLabel } from "@/lib/dashboard";
 import AlertsList from "./AlertsList";
 import BudgetSummary from "./BudgetSummary";
@@ -18,6 +19,7 @@ import UsageChart from "./UsageChart";
 export default function DashboardPage() {
   const households = useHouseholds();
   const { householdId } = households;
+  const { showToast } = useToast();
 
   const [dashboard, setDashboard] = useState(null);
   const [period, setPeriod] = useState("day");
@@ -26,7 +28,6 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [justSaved, setJustSaved] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function DashboardPage() {
     try {
       await api.logMeterReading(householdId, reading);
       setShowForm(false);
-      setJustSaved(true);
+      showToast("Reading saved.");
       setReloadCount((count) => count + 1);
     } catch (err) {
       setSaveError(err.message);
@@ -66,7 +67,6 @@ export default function DashboardPage() {
   function openForm() {
     setSaveError("");
     setShowForm(true);
-    setJustSaved(false);
   }
 
   const isLoading = households.loading || (loading && !dashboard);
@@ -112,11 +112,6 @@ export default function DashboardPage() {
       {dashboard && error && (
         <p role="alert" className="text-danger">
           {error}
-        </p>
-      )}
-      {justSaved && (
-        <p role="status" className="text-green">
-          Reading saved.
         </p>
       )}
 
