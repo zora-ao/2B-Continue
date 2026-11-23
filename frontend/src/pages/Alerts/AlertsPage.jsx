@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
+import { useToast } from "@/hooks/useToast";
 import { ALERT_CATEGORIES } from "@/lib/alerts";
 import AlertCard from "./AlertCard";
 import AlertRules from "./AlertRules";
@@ -15,6 +16,7 @@ import CategoryFilter from "./CategoryFilter";
 export default function AlertsPage() {
   const households = useHouseholds();
   const { householdId } = households;
+  const { showToast } = useToast();
 
   const [alerts, setAlerts] = useState(null);
   const [settings, setSettings] = useState(null);
@@ -22,7 +24,6 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
@@ -53,7 +54,6 @@ export default function AlertsPage() {
   async function run(action) {
     setBusy(true);
     setError("");
-    setStatusMessage("");
     try {
       await action();
     } catch (err) {
@@ -83,7 +83,7 @@ export default function AlertsPage() {
     run(async () => {
       const count = await api.markAllAlertsRead(householdId);
       await reloadList();
-      setStatusMessage(count === 1 ? "Marked 1 alert as read." : `Marked ${count} alerts as read.`);
+      showToast(count === 1 ? "Marked 1 alert as read." : `Marked ${count} alerts as read.`);
     });
   }
 
@@ -136,10 +136,6 @@ export default function AlertsPage() {
           {error}
         </p>
       )}
-      {/* Kept in the page at all times so screen readers announce each new message. */}
-      <p role="status" className="text-green empty:hidden">
-        {statusMessage}
-      </p>
 
       {isLoading && <PageSkeleton variant="alerts" label="Loading your alerts..." />}
 

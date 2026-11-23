@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
+import { useToast } from "@/hooks/useToast";
 import { todayIso } from "@/lib/dashboard";
 import { formatBudgetInput, parseBudget, shiftDate } from "@/lib/solar";
 import PanelChart from "./PanelChart";
@@ -19,6 +20,7 @@ const BUDGET_SAVE_DELAY_MS = 600;
 export default function SolarPage() {
   const households = useHouseholds();
   const { householdId } = households;
+  const { showToast } = useToast();
 
   const [solar, setSolar] = useState(null);
   const [weekOf, setWeekOf] = useState(null); // null = this week
@@ -37,7 +39,6 @@ export default function SolarPage() {
   const [savingReading, setSavingReading] = useState(false);
   const [saveReadingError, setSaveReadingError] = useState("");
   const [savingSystem, setSavingSystem] = useState(false);
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (!householdId) return;
@@ -70,7 +71,6 @@ export default function SolarPage() {
     setWeekOf(null);
     setShowForm(false);
     setSaveReadingError("");
-    setNotice("");
     clearTimeout(budgetTimer.current);
   }, [householdId]);
 
@@ -137,7 +137,7 @@ export default function SolarPage() {
     try {
       await api.logSolarReading(householdId, reading);
       setShowForm(false);
-      setNotice("Reading saved.");
+      showToast("Reading saved.");
       setReloadCount((count) => count + 1);
     } catch (err) {
       setSaveReadingError(err.message);
@@ -163,7 +163,6 @@ export default function SolarPage() {
               onClick={() => {
                 setSaveReadingError("");
                 setShowForm(true);
-                setNotice("");
               }}
             >
               <Plus />
@@ -194,11 +193,6 @@ export default function SolarPage() {
       {solar && error && (
         <p role="alert" className="text-danger">
           {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="text-green">
-          {notice}
         </p>
       )}
 

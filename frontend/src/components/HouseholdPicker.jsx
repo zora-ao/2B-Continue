@@ -18,8 +18,9 @@ export default function HouseholdPicker({ households, value, onChange, disabled 
     return null;
   }
 
+  // On desktop the Sidebar already shows the active household card with all actions.
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center gap-3 text-sm md:hidden">
       {households.length > 1 && (
         <>
           <span className="text-muted-foreground">Household</span>
@@ -37,21 +38,21 @@ export default function HouseholdPicker({ households, value, onChange, disabled 
           </Select>
         </>
       )}
-      <Button variant="outline" size="sm" onClick={openSetup} disabled={disabled}>
+      <Button variant="outline" onClick={openSetup} disabled={disabled}>
         <Plus />
         Add household
       </Button>
       {openShare && selected?.is_owner && (
-        <Button variant="outline" size="sm" onClick={() => openShare(selected)} disabled={disabled}>
+        <Button variant="outline" onClick={() => openShare(selected)} disabled={disabled}>
           <Share2 />
           Share household
         </Button>
       )}
       {openJoin && (
-        <Button variant="outline" size="sm" onClick={openJoin} disabled={disabled}>Join with PIN</Button>
+        <Button variant="outline" onClick={openJoin} disabled={disabled}>Join with PIN</Button>
       )}
       {selected?.is_owner && (
-        <Button variant="destructive" size="sm" onClick={() => openDelete(selected)} disabled={disabled}>
+        <Button variant="destructive" onClick={() => openDelete(selected)} disabled={disabled}>
           <Trash2 />
           Delete household
         </Button>

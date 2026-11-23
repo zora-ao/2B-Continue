@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
+import { useToast } from "@/hooks/useToast";
 import { parseBudget } from "@/lib/budget";
 import BudgetForm from "./BudgetForm";
 import BudgetTips from "./BudgetTips";
@@ -15,6 +16,7 @@ import PlanTable from "./PlanTable";
 export default function BudgetPage() {
   const households = useHouseholds();
   const { householdId } = households;
+  const { showToast } = useToast();
 
   const [planner, setPlanner] = useState(null);
   const [plan, setPlan] = useState(null);
@@ -23,7 +25,6 @@ export default function BudgetPage() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [justSaved, setJustSaved] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
 
   // Show this month's saved plan if there is one, otherwise a fresh preview.
@@ -32,7 +33,6 @@ export default function BudgetPage() {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    setJustSaved(false);
 
     api
       .getBudgetPlanner(householdId, { signal: controller.signal })
@@ -69,7 +69,6 @@ export default function BudgetPage() {
   async function run(action) {
     setBusy(true);
     setError("");
-    setJustSaved(false);
     try {
       await action();
     } catch (err) {
@@ -114,13 +113,12 @@ export default function BudgetPage() {
       });
       setPlanner({ ...planner, savedPlan });
       showPlan(savedPlan.plan);
-      setJustSaved(true);
+      showToast("Plan saved for this month.");
     });
   }
 
   function handleReset() {
     setError("");
-    setJustSaved(false);
     showPlan(planner.preview);
   }
 
@@ -179,7 +177,7 @@ export default function BudgetPage() {
 
       {plan && !isLoading && (
         <>
-          <SavedPlanStatus savedPlan={planner.savedPlan} justSaved={justSaved} />
+          <SavedPlanStatus savedPlan={planner.savedPlan} />
 
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="w-full lg:w-[360px] lg:shrink-0">
@@ -206,14 +204,7 @@ export default function BudgetPage() {
   );
 }
 
-function SavedPlanStatus({ savedPlan, justSaved }) {
-  if (justSaved) {
-    return (
-      <p role="status" className="text-green">
-        Plan saved for this month.
-      </p>
-    );
-  }
+function SavedPlanStatus({ savedPlan }) {
   if (!savedPlan) {
     return null;
   }
