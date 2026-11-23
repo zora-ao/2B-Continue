@@ -1,5 +1,74 @@
 # EnergyWise backend
 
+## Solar API
+
+Base path: `/api/households/<household_id>/solar`. No frontend files were
+changed for this feature.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | base path | Whole Solar page: profile, location list, recommendations, `my_system` |
+| GET | `/recommendations` | Recommended systems only (for live recalculation as inputs change) |
+| GET | `/performance?week_of=YYYY-MM-DD` | "My panels" week chart, today card, monthly savings, alerts |
+| GET | `/locations` | Location presets with average sun-hours |
+| GET / PUT | `/profile` | Read / save location, install budget, installed system |
+| POST | `/readings` | "Add reading": log or replace a day's generation (`date` in body) |
+| PUT / DELETE | `/readings/YYYY-MM-DD` | Replace / remove that day's generation log |
+
+The base path and `/recommendations` accept `?location=<key>&install_budget=150000`
+as unsaved what-if overrides; `install_budget=` (empty) means no budget limit. The
+base path also accepts `week_of` (any date in the week; default today). Weeks are
+Monday-Sunday.
+
+PUT `/profile` accepts any subset of these fields (missing fields are kept; the first
+save returns 201):
+
+```json
+{"location_key": "metro_manila", "install_budget": 150000, "system_kw": 2, "panel_watts": 550}
+```
+
+`install_budget` and `system_kw` may be null. Until `system_kw` is set, `my_system`
+is null and `/performance` returns 400. Without a saved profile, the location is
+guessed from the household's `location` text, defaulting to Metro Manila.
+
+Readings reuse the dashboard's solar log table and validation:
+`{"date": "2026-11-22", "generation_kwh": 8.4, "self_consumed_kwh": 6}`
+(`self_consumed_kwh` optional, cannot exceed generation).
+
+**Recommendations.** Monthly usage comes from the average of meter-logged days in
+the last 30 days (needs at least 7), else from appliance estimates, else is
+unavailable (`usage.source`). Each 1/2/3 kW system reports estimated cost, monthly
+generation (kW x sun-hours x 30.4 days x 0.80 performance ratio), monthly savings
+(generation offsetting usage, at the household rate; excess export is not
+credited), payback years, `covers_percent` (capped at 100), and `excess_kwh`.
+`status` is `best_fit`, `available`, or `over_budget`. Best fit is the smallest
+system within budget that covers at least 95% of usage; if none does, the largest
+system within budget. Prices and sun-hours are indicative values in
+`blueprints/solar/catalog.py`.
+
+**My panels.** Expected daily output = system kW x that day's Open-Meteo
+shortwave radiation (MJ/m² / 3.6 = peak sun hours) x 0.80. If Open-Meteo is
+unreachable, the location's average sun-hours are used and `expected_source` /
+`weather_source` is `location_average`. Responses are cached in memory (30 min
+for recent dates). Weeks older than ~90 days use the Open-Meteo archive API.
+Each day reports actual (null if not logged), expected, percent of expected,
+`sunny` (WMO code 0-2), `is_future`, and `low_output`.
+
+A finished day (before today) below 70% of expected raises a `low_output_<date>`
+alert, e.g. "Friday dropped to 57%" with a check-for-dirt/shade/breaker message.
+Today is excluded because a mid-day log would look like a fault.
+
+`saved_this_month`: avoided grid cost for the current Manila month. It uses
+`self_consumed_kwh` when logged, otherwise assumes all generation was used at
+home (counts reported in `self_consumed_days` / `generation_assumed_days`).
+`bill_reduced_percent` = solar offset / (solar offset + grid-meter usage), only
+over days that have both a solar log and known grid usage; null otherwise.
+
+Config: `SOLAR_WEATHER_ENABLED` (default true) and `SOLAR_WEATHER_TIMEOUT`
+(seconds, default 5) can be passed via `create_app(test_config)`.
+
+The `e3a1c5d7f902` migration creates `solar_profiles` (one row per household).
+
 ## Dashboard API
 
 Base path: `/api/households/<household_id>/dashboard`. No frontend files were
