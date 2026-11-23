@@ -9,6 +9,7 @@ from flask_cors import CORS
 from .blueprints.api.routes import api
 from .blueprints.appliances import appliances_bp
 from .blueprints.auth import auth_bp
+from .blueprints.auth.guard import require_login
 from .blueprints.households import households_bp
 from .blueprints.planning import planning_bp
 from .blueprints.dashboard import dashboard_bp
@@ -51,6 +52,7 @@ def create_app(test_config=None) -> Flask:
     migrate.init_app(app, db, directory=str(Path(__file__).resolve().parents[1] / "migrations"))
 
     register_error_handlers(app)
+    app.before_request(require_login)
 
     origins = [origin.strip() for origin in
                os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")]

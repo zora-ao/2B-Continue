@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import jsonify, session
+from flask import g, jsonify, session
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -80,8 +80,4 @@ def logout():
 
 @auth_bp.get("/me")
 def me():
-    user_id = session.get("user_id")
-    user = db.session.get(User, user_id) if user_id else None
-    if user is None:
-        return jsonify(error="Please log in."), 401
-    return jsonify(user=serialize_user(user))
+    return jsonify(user=serialize_user(g.user))

@@ -1,5 +1,46 @@
 # EnergyWise backend
 
+## Auth API
+
+Base path: `/api/auth`. Apply migration `f4b2d8c61a37` first. It adds a `users`
+table (with row-level security on and no policies, so Supabase's Data API can't
+read it) and a nullable `households.user_id`. Nothing else changes.
+
+| Method | Path | Body | Success | Errors |
+| --- | --- | --- | --- | --- |
+| POST | `/register` | `{"name", "email", "password"}` | 201 `{"user"}`, logged in | 400 invalid, 409 email taken |
+| POST | `/login` | `{"email", "password"}` | 200 `{"user"}` | 400 invalid body, 401 wrong email/password, 429 locked |
+| POST | `/logout` | none | 204 | none |
+| GET | `/me` | none | 200 `{"user"}` | 401 not logged in |
+
+`user` is `{"id", "name", "email"}`. Emails are trimmed and lowercased; names are
+1-120 characters; passwords are 8-128 characters and stored as Werkzeug scrypt
+hashes. Five wrong passwords lock the account for 15 minutes (429), even for the
+right password; a successful login resets the count.
+
+**Session.** Login and register set Flask's signed session cookie: `HttpOnly`,
+`SameSite=Lax`, `Secure` unless `FLASK_DEBUG=1`, valid for 7 days. The browser
+calls the API through the Vite/Vercel `/api` proxy, so no CORS credentials setup
+is needed. `SECRET_KEY` must be set or the app won't start: add a long random
+value to your local `backend/.env`; Render generates one (`render.yaml`).
+
+**Everything else requires login.** Every `/api` request except register, login,
+logout, and `/api/health` returns 401 `{"error": "Please log in."}` without a
+valid session. A `household_id` in the URL that isn't the user's returns 404, so
+other users' ids can't be probed. `GET /api/households` lists only the user's
+households, and `POST /api/households` makes the new one theirs.
+
+**Households from before login** have no owner and are hidden from everyone. To
+give one to an account:
+
+```sql
+UPDATE households SET user_id = <user id> WHERE id = <household id>;
+```
+
+**Tests.** `pip install -r requirements-dev.txt`, point `TEST_DATABASE_URL` at a
+throwaway local Postgres database (only `localhost` is accepted), then run
+`python -m pytest tests -q` from `backend/`.
+
 ## Solar API
 
 Base path: `/api/households/<household_id>/solar`. No frontend files were
