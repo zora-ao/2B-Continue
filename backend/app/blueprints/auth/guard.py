@@ -5,7 +5,8 @@ from sqlalchemy import select
 from ...extensions import db
 from ...models import Household, User
 
-PUBLIC_ENDPOINTS = {"auth.register", "auth.login", "auth.refresh", "auth.logout", "api.health"}
+PUBLIC_ENDPOINTS = {"auth.register", "auth.login", "auth.guest", "auth.refresh", "auth.logout",
+                    "api.health"}
 
 
 def require_login():

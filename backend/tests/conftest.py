@@ -64,3 +64,12 @@ def make_household(client, name="Home"):
     response = client.post("/api/households", headers=csrf_headers(client),
                            json={"name": name, "electricity_rate": 12, "monthly_budget": 2000})
     return response.get_json()["item"]["id"]
+
+
+HOME = {"name": "Home", "electricity_rate": 12, "monthly_budget": 2000}
+NEW_USER = {"name": "Ana", "email": "ana@example.com", "password": "correct-horse"}
+LOGIN = {"email": "ana@example.com", "password": "correct-horse"}
+
+
+def start_guest(client, mobile=False):
+    return client.post("/api/auth/guest", headers={"X-Client": "mobile"} if mobile else {})
