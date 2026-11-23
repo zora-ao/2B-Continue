@@ -14,6 +14,7 @@ import {
 import HouseholdPicker from "@/components/HouseholdPicker";
 import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { useHouseholds } from "@/hooks/useHouseholds";
 import ApplianceForm from "./ApplianceForm";
 import ApplianceList from "./ApplianceList";
@@ -109,7 +110,7 @@ export default function AppliancesPage() {
           )}
         </div>
       )}
-      {isLoading && <p role="status">Loading appliances...</p>}
+      {isLoading && <PageSkeleton variant="appliances" label="Loading appliances..." />}
       {!isLoading && !households.error && households.households.length === 0 && <NoHousehold />}
       {period && !isLoading && <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="w-full lg:w-[400px] lg:shrink-0">

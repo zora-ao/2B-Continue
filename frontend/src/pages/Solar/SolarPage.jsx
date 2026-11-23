@@ -4,6 +4,7 @@ import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
 import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
 import { todayIso } from "@/lib/dashboard";
@@ -34,6 +35,7 @@ export default function SolarPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [savingReading, setSavingReading] = useState(false);
+  const [saveReadingError, setSaveReadingError] = useState("");
   const [savingSystem, setSavingSystem] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -67,6 +69,7 @@ export default function SolarPage() {
   useEffect(() => {
     setWeekOf(null);
     setShowForm(false);
+    setSaveReadingError("");
     setNotice("");
     clearTimeout(budgetTimer.current);
   }, [householdId]);
@@ -130,14 +133,14 @@ export default function SolarPage() {
 
   async function handleSaveReading(reading) {
     setSavingReading(true);
-    setError("");
+    setSaveReadingError("");
     try {
       await api.logSolarReading(householdId, reading);
       setShowForm(false);
       setNotice("Reading saved.");
       setReloadCount((count) => count + 1);
     } catch (err) {
-      setError(err.message);
+      setSaveReadingError(err.message);
     } finally {
       setSavingReading(false);
     }
@@ -154,11 +157,11 @@ export default function SolarPage() {
         title="Solar"
         subtitle="Find a system that fits your budget, then track how your panels perform."
         actions={
-          mySystem &&
-          !showForm && (
+          mySystem && (
             <Button
               size="lg"
               onClick={() => {
+                setSaveReadingError("");
                 setShowForm(true);
                 setNotice("");
               }}
@@ -199,19 +202,22 @@ export default function SolarPage() {
         </p>
       )}
 
-      {isLoading && <p role="status">Loading solar...</p>}
+      {isLoading && <PageSkeleton variant="solar" label="Loading solar..." />}
 
       {!isLoading && !households.error && households.households.length === 0 && <NoHousehold />}
 
       {solar && !isLoading && (
         <>
-          {showForm && (
-            <SolarReadingForm
-              onSave={handleSaveReading}
-              onCancel={() => setShowForm(false)}
-              busy={savingReading}
-            />
-          )}
+          <SolarReadingForm
+            open={showForm}
+            onOpenChange={(next) => {
+              setShowForm(next);
+              if (!next) setSaveReadingError("");
+            }}
+            onSave={handleSaveReading}
+            busy={savingReading}
+            error={saveReadingError}
+          />
 
           <RecommendedSystems
             householdId={householdId}

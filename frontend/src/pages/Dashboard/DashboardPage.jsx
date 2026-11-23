@@ -4,6 +4,7 @@ import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
 import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
 import { monthLabel } from "@/lib/dashboard";
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
@@ -48,20 +50,21 @@ export default function DashboardPage() {
 
   async function handleSaveReading(reading) {
     setSaving(true);
-    setError("");
+    setSaveError("");
     try {
       await api.logMeterReading(householdId, reading);
       setShowForm(false);
       setJustSaved(true);
       setReloadCount((count) => count + 1);
     } catch (err) {
-      setError(err.message);
+      setSaveError(err.message);
     } finally {
       setSaving(false);
     }
   }
 
   function openForm() {
+    setSaveError("");
     setShowForm(true);
     setJustSaved(false);
   }
@@ -79,8 +82,7 @@ export default function DashboardPage() {
             : "See how much power you use and how your budget is doing."
         }
         actions={
-          dashboard &&
-          !showForm && (
+          dashboard && (
             <Button size="lg" onClick={openForm}>
               <Plus />
               Log meter reading
@@ -118,7 +120,7 @@ export default function DashboardPage() {
         </p>
       )}
 
-      {isLoading && <p role="status">Loading your dashboard...</p>}
+      {isLoading && <PageSkeleton variant="dashboard" label="Loading your dashboard..." />}
 
       {!isLoading && !households.error && households.households.length === 0 && (
         <NoHousehold />
@@ -126,13 +128,16 @@ export default function DashboardPage() {
 
       {dashboard && !isLoading && (
         <>
-          {showForm && (
-            <MeterReadingForm
-              onSave={handleSaveReading}
-              onCancel={() => setShowForm(false)}
-              busy={saving}
-            />
-          )}
+          <MeterReadingForm
+            open={showForm}
+            onOpenChange={(next) => {
+              setShowForm(next);
+              if (!next) setSaveError("");
+            }}
+            onSave={handleSaveReading}
+            busy={saving}
+            error={saveError}
+          />
 
           <StatCards dashboard={dashboard} />
 
