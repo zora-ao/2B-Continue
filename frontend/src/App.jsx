@@ -4,6 +4,7 @@ import AlertsPage from "@/pages/Alerts/AlertsPage";
 import AppliancesPage from "@/pages/Appliances/AppliancesPage";
 import BudgetPage from "@/pages/Budget/BudgetPage";
 import DashboardPage from "@/pages/Dashboard/DashboardPage";
+import ScanPhotoPage from "@/pages/Scan/ScanPhotoPage";
 import SolarPage from "@/pages/Solar/SolarPage";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/appliances" element={<AppliancesPage />} />
           <Route path="/solar" element={<SolarPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/scan/:code" element={<ScanPhotoPage />} />
         </Routes>
       </main>
     </div>
