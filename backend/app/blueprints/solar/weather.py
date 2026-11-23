@@ -54,7 +54,7 @@ def daily_weather(latitude, longitude, start, end, today):
                         "timezone": "Asia/Manila",
                         "start_date": start.isoformat(), "end_date": end.isoformat()})
     try:
-        request = Request(f"{url}?{params}", headers={"User-Agent": "EnergyWise/1.0"})
+        request = Request(f"{url}?{params}", headers={"User-Agent": "Kuryenta/1.0"})
         with urlopen(request, timeout=current_app.config.get("SOLAR_WEATHER_TIMEOUT", 5)) as response:
             payload = json.load(response)
         daily = payload["daily"]

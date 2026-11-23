@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  EnergyWise theme (dark only). Values come from the Figma "EnergyWise Colors"
+  Kuryenta theme (dark only). Values come from the Figma "EnergyWise Colors" file
   tokens, written into shadcn's standard variable names so every shadcn
   component picks them up automatically.
 
@@ -96,7 +96,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Extra EnergyWise status colors (not part of shadcn) */
+  /* Extra Kuryenta status colors (not part of shadcn) */
   --color-green: #22e39b;
   --color-green-soft: #0f3b2e;
   --color-yellow: #facc15;

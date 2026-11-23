@@ -6,7 +6,7 @@ export default function Logo() {
       <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <Zap className="size-[18px]" />
       </div>
-      <span className="font-heading text-xl font-medium">EnergyWise</span>
+      <span className="font-heading text-xl font-medium">Kuryenta</span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# EnergyWise
+# Kuryenta
 
 SDG 7 energy-saving web app. `frontend/` is React + Vite + Tailwind v4 + shadcn/ui. `backend/` is Flask + SQLAlchemy on Supabase Postgres.
 

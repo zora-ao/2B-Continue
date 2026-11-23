@@ -1,21 +1,21 @@
-# EnergyWise
+# Kuryenta
 
 **Know where your electricity money goes and how to spend less of it.**
 
-EnergyWise is a household energy-saving web app built around **SDG 7: Affordable and Clean Energy**. You enter your appliances, budget and meter readings. EnergyWise then shows what each appliance costs, builds a monthly plan that fits your budget, warns you before the bill gets out of hand, and helps you decide whether solar panels are worth it.
+Kuryenta is a household energy-saving web app built around **SDG 7: Affordable and Clean Energy**. You enter your appliances, budget and meter readings. Kuryenta then shows what each appliance costs, builds a monthly plan that fits your budget, warns you before the bill gets out of hand, and helps you decide whether solar panels are worth it.
 
 `React 19` · `Vite 7` · `Tailwind CSS v4` · `shadcn/ui` · `Flask 3` · `SQLAlchemy 2` · `PostgreSQL (Supabase)` · `Vercel` · `Render`
 
 [Features](#features) · [How it works](#how-it-works) · [Getting started](#getting-started) · [API](#api) · [Deployment](#deployment)
 
 > [!IMPORTANT]
-> Every number EnergyWise shows is an **estimate built from what you type in**: appliance wattage, hours of use, meter readings and your electricity rate. It is not connected to a smart meter or to your utility. Solar prices and sun-hours are indicative values, not quotes.
+> Every number Kuryenta shows is an **estimate built from what you type in**: appliance wattage, hours of use, meter readings and your electricity rate. It is not connected to a smart meter or to your utility. Solar prices and sun-hours are indicative values, not quotes.
 
 ---
 
 ## Contents
 
-- [Why EnergyWise](#why-energywise)
+- [Why Kuryenta](#why-kuryenta)
 - [Features](#features)
 - [How it works](#how-it-works)
 - [The math](#the-math)
@@ -31,11 +31,11 @@ EnergyWise is a household energy-saving web app built around **SDG 7: Affordable
 
 ---
 
-## Why EnergyWise
+## Why Kuryenta
 
 Most households only find out what they used when the bill arrives, and by then it's too late to change anything. The bill also doesn't say *which* appliance caused it.
 
-EnergyWise moves that moment earlier:
+Kuryenta moves that moment earlier:
 
 - **Before the month:** plan how many hours each appliance can run and still stay within budget.
 - **During the month:** log meter readings and see right away whether you're on track.
@@ -49,7 +49,7 @@ EnergyWise moves that moment earlier:
 | Page | What you can do |
 | --- | --- |
 | **Dashboard** | See today's usage, the month's spend against your budget, the projected bill, a safe daily spend, a usage chart (day / week / month), the share each appliance takes, and your top alerts. Log meter readings here. |
-| **Budget Planner** | Enter a monthly budget and pick a style (**Balanced**, **Strict** or **Comfort**). EnergyWise suggests hours per appliance so the plan fits. Adjust any row with +/- and save the plan for the month. |
+| **Budget Planner** | Enter a monthly budget and pick a style (**Balanced**, **Strict** or **Comfort**). Kuryenta suggests hours per appliance so the plan fits. Adjust any row with +/- and save the plan for the month. |
 | **Appliances** | Add, edit and delete appliances (watts, quantity, hours per day, room, must-have or flexible). Each card shows its estimated monthly kWh and cost. |
 | **Solar** | Compare 1, 2 and 3 kW systems by cost, monthly savings and payback time, with the best fit highlighted. If you already have panels, log daily generation and compare it with the expected output based on that day's weather. |
 | **Alerts** | Review budget, usage, appliance and solar alerts. Filter them, mark them read or unread, and switch each rule on or off. |
@@ -60,7 +60,7 @@ All pages work per **household**. On first visit you create one (name, electrici
 
 ## How it works
 
-| Step | You | EnergyWise |
+| Step | You | Kuryenta |
 | --- | --- | --- |
 | **1 · Set up** | Create a household with your rate and budget. | Saves it and remembers your selection in the browser. |
 | **2 · List appliances** | Add each appliance with its watts and daily hours. | Estimates daily and monthly kWh and cost for each one. |
@@ -326,4 +326,4 @@ Read **[CLAUDE.md](CLAUDE.md)** for the full conventions before you start.
 
 ---
 
-*EnergyWise is a student project supporting SDG 7: Affordable and Clean Energy.*
+*Kuryenta is a student project supporting SDG 7: Affordable and Clean Energy.*

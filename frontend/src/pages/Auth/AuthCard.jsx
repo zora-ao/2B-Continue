@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 export default function AuthCard({ title, subtitle, children, footer }) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-start gap-6 px-4 py-10 sm:justify-center">
-      <title>{`${title} | EnergyWise`}</title>
+      <title>{`${title} | Kuryenta`}</title>
       <Logo />
       <Link
         to="/"
