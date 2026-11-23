@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,22 +9,24 @@ import PasswordInput from "./PasswordInput";
 
 export default function RegisterPage() {
   const { user, register } = useAuth();
-  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const justRegistered = useRef(false);
 
-  if (user) return <Navigate to="/" replace />;
+  // Once logged in, leave this page. New accounts have no household yet,
+  // so they go to Appliances, which walks them through setting one up.
+  if (user) return <Navigate to={justRegistered.current ? "/appliances" : "/"} replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError("");
+    justRegistered.current = true;
     try {
       await register({ name: form.get("name"), email: form.get("email"), password: form.get("password") });
-      // New accounts have no household yet; the Appliances page walks them through it.
-      navigate("/appliances", { replace: true });
     } catch (err) {
+      justRegistered.current = false;
       setError(err.message);
       setBusy(false);
     }

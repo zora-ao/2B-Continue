@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,11 @@ import PasswordInput from "./PasswordInput";
 
 export default function LoginPage() {
   const { user, login } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // Once logged in (or already logged in), go back to the page that sent us here.
   if (user) return <Navigate to={location.state?.from?.pathname ?? "/"} replace />;
 
   async function handleSubmit(event) {
@@ -23,7 +23,6 @@ export default function LoginPage() {
     setError("");
     try {
       await login({ email: form.get("email"), password: form.get("password") });
-      navigate(location.state?.from?.pathname ?? "/", { replace: true });
     } catch (err) {
       setError(err.message);
       setBusy(false);
