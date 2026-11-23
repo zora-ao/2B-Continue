@@ -7,7 +7,7 @@ def validate_appliance(data, *, partial=False):
     if not isinstance(data, dict):
         raise ValidationError("Send a JSON object.")
     allowed = {"name", "appliance_type", "room", "watts", "quantity",
-               "hours_per_day", "is_must_have"}
+               "hours_per_day", "is_must_have", "standby_watts", "standby_hours_per_day"}
     unknown = set(data) - allowed
     if unknown:
         raise ValidationError("Unknown fields: " + ", ".join(sorted(unknown)))
@@ -27,8 +27,13 @@ def validate_appliance(data, *, partial=False):
             raise ValidationError(f"{field} must contain 1–{limit} characters.")
         values[field] = value.strip()
     for field, maximum in (("watts", Decimal("999999999.999")),
-                           ("hours_per_day", Decimal(24))):
+                           ("hours_per_day", Decimal(24)),
+                           ("standby_watts", Decimal("999999999.999")),
+                           ("standby_hours_per_day", Decimal(24))):
         if field not in data:
+            continue
+        if field == "standby_watts" and data[field] is None:
+            values[field] = None
             continue
         try:
             value = Decimal(str(data[field]))

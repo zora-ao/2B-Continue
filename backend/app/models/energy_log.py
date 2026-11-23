@@ -38,6 +38,7 @@ class SolarGeneration(db.Model):
         db.CheckConstraint("generation_kwh >= 0", name="ck_solar_generation_positive"),
         db.CheckConstraint("self_consumed_kwh >= 0 AND self_consumed_kwh <= generation_kwh",
                            name="ck_solar_self_consumed_range"),
+        db.CheckConstraint("expected_generation_kwh >= 0", name="ck_solar_expected_positive"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -45,6 +46,7 @@ class SolarGeneration(db.Model):
         db.ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
     date: Mapped[Date] = mapped_column(db.Date, nullable=False)
     generation_kwh: Mapped[Decimal] = mapped_column(db.Numeric(15, 3), nullable=False)
+    expected_generation_kwh: Mapped[Decimal | None] = mapped_column(db.Numeric(15, 3))
     self_consumed_kwh: Mapped[Decimal | None] = mapped_column(db.Numeric(15, 3))
     updated_at: Mapped[datetime] = mapped_column(
         db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),

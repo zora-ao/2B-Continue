@@ -1,15 +1,9 @@
-from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP, localcontext
+from decimal import Decimal, ROUND_DOWN, localcontext
 
+from ...calculations import ZERO, monthly_estimate, output
 from ...errors import ValidationError
 
-ZERO = Decimal(0)
 STEP = Decimal("0.001")
-
-
-def output(value, places="0.001"):
-    with localcontext() as ctx:
-        ctx.prec = 50
-        return float(value.quantize(Decimal(places), rounding=ROUND_HALF_UP))
 
 
 def recommend_hours(appliances, budget, rate, days, style):
@@ -75,10 +69,11 @@ def _build_plan(appliances, month, days, style, budget, rate, adjustments):
             "hours_per_day": float(hours[appliance.id]),
             "is_reduced": hours[appliance.id] < appliance.hours_per_day,
             "estimated_daily_kwh": output(usage),
-            "estimated_monthly_kwh": output(usage * days),
-            "estimated_monthly_cost": output(usage * days * rate, "0.01"),
+            **monthly_estimate(usage, days, rate),
         })
-    cost = daily * days * rate
+    monthly = daily * days
+    allowance = budget / rate
+    cost = monthly * rate
     essential_cost = essential * days * rate
     fits = cost <= budget
     warnings = []
@@ -92,13 +87,12 @@ def _build_plan(appliances, month, days, style, budget, rate, adjustments):
         "month": month, "days_in_month": days, "style": style,
         "monthly_budget": float(budget), "electricity_rate": float(rate),
         "fits_budget": fits, "status": "fits_budget" if fits else "over_budget",
-        "allowance": {"monthly_kwh": output(budget / rate),
-                      "daily_kwh": output(budget / rate / days),
+        "allowance": {"monthly_kwh": output(allowance),
+                      "daily_kwh": output(allowance / days),
                       "daily_budget": output(budget / days, "0.01")},
         "items": rows,
         "totals": {"estimated_daily_kwh": output(daily),
-                   "estimated_monthly_kwh": output(daily * days),
-                   "estimated_monthly_cost": output(cost, "0.01"),
+                   **monthly_estimate(daily, days, rate),
                    "original_monthly_cost": output(baseline * days * rate, "0.01"),
                    "estimated_monthly_savings": output((baseline - daily) * days * rate, "0.01"),
                    "remaining_budget": output(budget - cost, "0.01"),
