@@ -23,6 +23,7 @@ export default function MeterReadingForm({ onSave, onCancel, busy }) {
   function handleSubmit(event) {
     event.preventDefault();
     setTouched(true);
+    if (kwh === null) document.getElementById("reading-kwh")?.focus();
     if (kwh === null || !date) return;
     onSave({ date, kind, kwh });
   }
@@ -37,11 +38,16 @@ export default function MeterReadingForm({ onSave, onCancel, busy }) {
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1 sm:w-fit">
+            <div
+              role="group"
+              aria-label="Reading type"
+              className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1 sm:w-fit"
+            >
               {READING_KINDS.map((option) => (
                 <Button
                   key={option.value}
                   type="button"
+                  aria-pressed={kind === option.value}
                   variant={kind === option.value ? "default" : "ghost"}
                   className={cn(kind !== option.value && "text-muted-foreground")}
                   onClick={() => setKind(option.value)}
@@ -75,10 +81,11 @@ export default function MeterReadingForm({ onSave, onCancel, busy }) {
                 placeholder={kind === "meter" ? "12345.6" : "5.3"}
                 value={kwhText}
                 aria-invalid={touched && kwh === null}
+                aria-describedby={touched && kwh === null ? "reading-kwh-error" : undefined}
                 onChange={(event) => setKwhText(event.target.value)}
               />
               {touched && kwh === null && (
-                <p className="text-sm text-danger">Enter 0 kWh or more (up to 3 decimals)</p>
+                <p id="reading-kwh-error" className="text-sm text-danger">Enter 0 kWh or more (up to 3 decimals)</p>
               )}
             </div>
           </div>

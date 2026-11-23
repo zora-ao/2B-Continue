@@ -65,7 +65,7 @@ export default function Sidebar() {
           </button>
         </div>
         {open && (
-          <nav id="mobile-nav" className="flex flex-col gap-1.5 px-4 pb-4">
+          <nav id="mobile-nav" aria-label="Main" className="flex flex-col gap-1.5 px-4 pb-4">
             <NavLinks onNavigate={() => setOpen(false)} />
           </nav>
         )}
@@ -76,7 +76,9 @@ export default function Sidebar() {
         <div className="mb-6">
           <Logo />
         </div>
-        <NavLinks />
+        <nav aria-label="Main" className="flex flex-col gap-1.5">
+          <NavLinks />
+        </nav>
       </aside>
     </>
   );
