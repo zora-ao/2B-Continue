@@ -171,3 +171,9 @@ progress.loading-spinner::-moz-progress-bar {
     rotate: 1turn;
   }
 }
+
+/* Sibling cards (a grid or a list) fade in one after another, capped at the 5th. */
+[data-slot="card"]:nth-child(2) { --tw-animation-delay: 50ms; }
+[data-slot="card"]:nth-child(3) { --tw-animation-delay: 100ms; }
+[data-slot="card"]:nth-child(4) { --tw-animation-delay: 150ms; }
+[data-slot="card"]:nth-child(n + 5) { --tw-animation-delay: 200ms; }
