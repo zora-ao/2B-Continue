@@ -1,9 +1,13 @@
 // The big title (and optional subtitle) at the top of every page.
-export default function PageHeader({ title, subtitle }) {
+// `actions` (optional) shows buttons on the right, e.g. Save.
+export default function PageHeader({ title, subtitle, actions }) {
   return (
-    <header>
-      <h1 className="text-3xl font-bold">{title}</h1>
-      {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 className="text-3xl font-bold">{title}</h1>
+        {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
+      </div>
+      {actions && <div className="flex gap-3">{actions}</div>}
     </header>
   );
 }

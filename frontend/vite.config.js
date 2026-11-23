@@ -11,9 +11,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Forward /api calls to Flask during development
+    // Forward /api calls to Flask during development.
+    // Use another backend with: API_URL=http://127.0.0.1:5001 npm run dev
     proxy: {
-      "/api": "http://127.0.0.1:5000",
+      "/api": process.env.API_URL || "http://127.0.0.1:5000",
     },
   },
 });
