@@ -1,10 +1,11 @@
-from flask import abort, g, jsonify, request, session
+from flask import abort, g, jsonify, request
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from sqlalchemy import select
 
 from ...extensions import db
 from ...models import Household, User
 
-PUBLIC_ENDPOINTS = {"auth.register", "auth.login", "auth.logout", "api.health"}
+PUBLIC_ENDPOINTS = {"auth.register", "auth.login", "auth.refresh", "auth.logout", "api.health"}
 
 
 def require_login():
@@ -12,10 +13,9 @@ def require_login():
         return None
     if request.method == "OPTIONS" or request.endpoint in PUBLIC_ENDPOINTS:
         return None
-    user_id = session.get("user_id")
-    user = db.session.get(User, user_id) if isinstance(user_id, int) else None
+    verify_jwt_in_request()
+    user = db.session.get(User, int(get_jwt_identity()))
     if user is None:
-        session.clear()
         return jsonify(error="Please log in."), 401
     g.user = user
     household_id = (request.view_args or {}).get("household_id")

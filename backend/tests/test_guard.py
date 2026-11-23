@@ -3,7 +3,7 @@ from sqlalchemy import delete, select
 
 from app.extensions import db
 from app.models import Household, User
-from tests.conftest import make_household, register
+from tests.conftest import csrf_headers, make_household, register
 
 
 @pytest.mark.parametrize("path", [
@@ -54,7 +54,7 @@ def test_cannot_write_to_others_household(client):
     ana_home = make_household(client)
     client.post("/api/auth/logout")
     register(client, email="ben@example.com")
-    response = client.post(f"/api/households/{ana_home}/appliances",
+    response = client.post(f"/api/households/{ana_home}/appliances", headers=csrf_headers(client),
                            json={"name": "Fan", "watts": 50, "hours_per_day": 4})
     assert response.status_code == 404
 
@@ -74,7 +74,7 @@ def test_legacy_unowned_household_hidden(app, client):
     assert client.get(f"/api/households/{legacy.id}/appliances").status_code == 404
 
 
-def test_session_for_deleted_user_is_401(app, client):
+def test_token_for_deleted_user_is_401(app, client):
     register(client)
     db.session.execute(delete(User))
     db.session.commit()

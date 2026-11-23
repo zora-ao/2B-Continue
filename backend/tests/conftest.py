@@ -10,7 +10,7 @@ if urlsplit(TEST_DATABASE_URL).hostname not in {"localhost", "127.0.0.1"}:
     pytest.exit("TEST_DATABASE_URL must point at localhost, never a shared database.", returncode=2)
 
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
-os.environ["SECRET_KEY"] = "test-secret"
+os.environ["SECRET_KEY"] = "test-secret-key-that-is-at-least-32-bytes"
 os.environ["FLASK_DEBUG"] = "1"
 
 from app import create_app  # noqa: E402
@@ -46,7 +46,21 @@ def register(client, name="Ana", email="ana@example.com", password="correct-hors
                        json={"name": name, "email": email, "password": password})
 
 
+def mobile_register(client, email="ana@example.com"):
+    return client.post("/api/auth/register", headers={"X-Client": "mobile"},
+                       json={"name": "Ana", "email": email, "password": "correct-horse"})
+
+
+def bearer(token):
+    return {"Authorization": f"Bearer {token}"}
+
+
+def csrf_headers(client, kind="access"):
+    cookie = client.get_cookie(f"csrf_{kind}_token")
+    return {"X-CSRF-TOKEN": cookie.value} if cookie else {}
+
+
 def make_household(client, name="Home"):
-    response = client.post("/api/households",
+    response = client.post("/api/households", headers=csrf_headers(client),
                            json={"name": name, "electricity_rate": 12, "monthly_budget": 2000})
     return response.get_json()["item"]["id"]

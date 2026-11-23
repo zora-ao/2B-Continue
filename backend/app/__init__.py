@@ -1,5 +1,4 @@
 import os
-from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,13 +9,14 @@ from .blueprints.api.routes import api
 from .blueprints.appliances import appliances_bp
 from .blueprints.auth import auth_bp
 from .blueprints.auth.guard import require_login
+from .blueprints.auth.tokens import ACCESS_LIFETIME, REFRESH_LIFETIME, register_jwt_errors
 from .blueprints.households import households_bp
 from .blueprints.planning import planning_bp
 from .blueprints.dashboard import dashboard_bp
 from .blueprints.solar import solar_bp
 from .blueprints.alerts import alerts_bp
 from .errors import register_error_handlers
-from .extensions import db, migrate
+from .extensions import db, jwt, migrate
 
 
 def create_app(test_config=None) -> Flask:
@@ -39,10 +39,17 @@ def create_app(test_config=None) -> Flask:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config.update(
         SECRET_KEY=secret_key,
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=os.getenv("FLASK_DEBUG") != "1",
-        PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+        JWT_SECRET_KEY=secret_key,
+        JWT_ALGORITHM="HS256",
+        JWT_TOKEN_LOCATION=["cookies", "headers"],
+        JWT_ACCESS_TOKEN_EXPIRES=ACCESS_LIFETIME,
+        JWT_REFRESH_TOKEN_EXPIRES=REFRESH_LIFETIME,
+        JWT_ACCESS_COOKIE_PATH="/api",
+        JWT_REFRESH_COOKIE_PATH="/api/auth",
+        JWT_COOKIE_SECURE=os.getenv("FLASK_DEBUG") != "1",
+        JWT_COOKIE_SAMESITE="Lax",
+        JWT_SESSION_COOKIE=False,
+        JWT_COOKIE_CSRF_PROTECT=True,
     )
     if test_config:
         app.config.update(test_config)
@@ -52,6 +59,8 @@ def create_app(test_config=None) -> Flask:
     migrate.init_app(app, db, directory=str(Path(__file__).resolve().parents[1] / "migrations"))
 
     register_error_handlers(app)
+    jwt.init_app(app)
+    register_jwt_errors(jwt)
     app.before_request(require_login)
 
     origins = [origin.strip() for origin in

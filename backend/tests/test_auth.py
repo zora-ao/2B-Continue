@@ -13,6 +13,7 @@ def test_register_creates_user_and_logs_in(client):
     response = register(client, name=" Ana ", email=" Ana@Example.com ")
     assert response.status_code == 201
     assert response.get_json() == {"user": {"id": ANY, "name": "Ana", "email": "ana@example.com"}}
+    assert "access_token" not in response.get_json()
     assert client.get("/api/auth/me").get_json()["user"]["email"] == "ana@example.com"
 
 
@@ -61,16 +62,28 @@ def test_logout_clears_session(client):
     assert client.get("/api/auth/me").status_code == 401
 
 
-def test_session_cookie_flags(client):
-    cookie = register(client).headers["Set-Cookie"]
-    assert "HttpOnly" in cookie
-    assert "SameSite=Lax" in cookie
-    assert "Expires=" in cookie
+def test_web_cookie_flags(client):
+    cookies = register(client).headers.getlist("Set-Cookie")
+
+    def find(name):
+        return next(cookie for cookie in cookies if cookie.startswith(name + "="))
+
+    access = find("access_token_cookie")
+    assert "HttpOnly" in access
+    assert "SameSite=Lax" in access
+    assert "Path=/api;" in access
+    assert "Max-Age=2592000" in access
+    refresh = find("refresh_token_cookie")
+    assert "HttpOnly" in refresh
+    assert "Path=/api/auth" in refresh
+    csrf = find("csrf_access_token")
+    assert "HttpOnly" not in csrf
+    assert "Path=/;" in csrf or csrf.endswith("Path=/")
 
 
 def test_cookie_secure_outside_debug(monkeypatch):
     monkeypatch.setenv("FLASK_DEBUG", "0")
-    assert create_app().config["SESSION_COOKIE_SECURE"] is True
+    assert create_app().config["JWT_COOKIE_SECURE"] is True
 
 
 def test_secret_key_required(monkeypatch):

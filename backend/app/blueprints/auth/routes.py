@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import g, jsonify, session
+from flask import g, jsonify, make_response
+from flask_jwt_extended import unset_jwt_cookies
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth_bp
+from .tokens import issue_tokens, serialize_user, token_response, wants_mobile
 from .validation import normalize_email, validate_login, validate_registration
 from ...errors import ValidationError, json_payload
 from ...extensions import db
@@ -15,16 +17,6 @@ MAX_FAILED_LOGINS = 5
 LOCKOUT = timedelta(minutes=15)
 # Checked against when the email is unknown, so the response takes as long as a real check.
 DUMMY_HASH = generate_password_hash("not-a-real-password")
-
-
-def serialize_user(user):
-    return {"id": user.id, "name": user.name, "email": user.email}
-
-
-def start_session(user):
-    session.clear()
-    session["user_id"] = user.id
-    session.permanent = True
 
 
 @auth_bp.post("/register")
@@ -38,8 +30,9 @@ def register():
     except IntegrityError:
         db.session.rollback()
         return jsonify(error="An account with this email already exists."), 409
-    start_session(user)
-    return jsonify(user=serialize_user(user)), 201
+    access, refresh = issue_tokens(user)
+    db.session.commit()
+    return token_response(user, access, refresh, mobile=wants_mobile(), status=201)
 
 
 @auth_bp.post("/login")
@@ -67,15 +60,16 @@ def login():
         return jsonify(error="Email or password is incorrect."), 401
     user.failed_login_count = 0
     user.locked_until = None
+    access, refresh = issue_tokens(user)
     db.session.commit()
-    start_session(user)
-    return jsonify(user=serialize_user(user))
+    return token_response(user, access, refresh, mobile=wants_mobile())
 
 
 @auth_bp.post("/logout")
 def logout():
-    session.clear()
-    return "", 204
+    response = make_response("", 204)
+    unset_jwt_cookies(response)
+    return response
 
 
 @auth_bp.get("/me")
