@@ -34,6 +34,8 @@ def serialize(appliance, days, rate):
         "name": appliance.name, "appliance_type": appliance.appliance_type,
         "room": appliance.room, "watts": float(appliance.watts),
         "quantity": appliance.quantity, "hours_per_day": float(appliance.hours_per_day),
+        "standby_watts": float(appliance.standby_watts) if appliance.standby_watts is not None else None,
+        "standby_hours_per_day": float(appliance.standby_hours_per_day),
         "is_must_have": appliance.is_must_have,
         "category": "must-have" if appliance.is_must_have else "flexible",
         "estimated_daily_kwh": rounded(daily),

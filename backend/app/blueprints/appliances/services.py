@@ -35,6 +35,10 @@ def list_summary(household, month, days, category):
 
 
 def save_appliance(household_id, values, appliance=None):
+    hours = values.get("hours_per_day", appliance.hours_per_day if appliance else Decimal(0))
+    standby_hours = values.get("standby_hours_per_day", appliance.standby_hours_per_day if appliance else Decimal(0))
+    if hours + standby_hours > 24:
+        raise ValidationError("Active and standby hours combined cannot exceed 24 per day.")
     if appliance is None:
         appliance = Appliance(household_id=household_id)
         db.session.add(appliance)

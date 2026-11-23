@@ -40,7 +40,16 @@ def dashboard_data(household_id):
                         budget=Decimal(str(saved.snapshot["monthly_budget"])),
                         source="saved_budget_plan",
                         is_stale=saved.source_fingerprint != fingerprint(household, appliances))
-    return overview(household, appliances, readings, solar, first, end, as_of, period, settings)
+    result, _ = overview(household, appliances, readings, solar, first, end, as_of, period, settings)
+    from ..alerts.engine import serialize
+    from ...models import Alert
+    rows = db.session.scalars(select(Alert).where(
+        Alert.household_id == household_id, Alert.month == first.strftime("%Y-%m"),
+        Alert.is_active.is_(True)).order_by(Alert.created_at.desc(), Alert.id.desc())).all()
+    alerts = [serialize(row) for row in rows]
+    result.update(alerts=alerts[:3], alert_count=len(alerts),
+                  unread_alert_count=sum(row.read_at is None for row in rows))
+    return result, alerts
 
 
 @dashboard_bp.get("")
@@ -100,6 +109,7 @@ def serialize_log(row, usage=None):
             daily_usage_kwh=float(usage[row.date]) if usage is not None and row.date in usage else None)
     else:
         result.update(generation_kwh=float(row.generation_kwh),
+                      expected_generation_kwh=float(row.expected_generation_kwh) if row.expected_generation_kwh is not None else None,
                       self_consumed_kwh=float(row.self_consumed_kwh) if row.self_consumed_kwh is not None else None)
     return result
 
@@ -129,13 +139,14 @@ def save_log(model, household_id, log_date, data):
             validate_counter(household_id, log_date, value)
         values = {"consumption_kwh": None, "meter_reading_kwh": None, field: value}
     else:
-        if "generation_kwh" not in data or set(data) - {"generation_kwh", "self_consumed_kwh"}:
-            raise ValidationError("Provide generation_kwh and optional self_consumed_kwh.")
+        if "generation_kwh" not in data or set(data) - {"generation_kwh", "self_consumed_kwh", "expected_generation_kwh"}:
+            raise ValidationError("Provide generation_kwh and optional self_consumed_kwh / expected_generation_kwh.")
         generation = kwh(data["generation_kwh"], "generation_kwh")
         used = kwh(data["self_consumed_kwh"], "self_consumed_kwh") if data.get("self_consumed_kwh") is not None else None
         if used is not None and used > generation:
             raise ValidationError("self_consumed_kwh cannot exceed generation_kwh.")
-        values = {"generation_kwh": generation, "self_consumed_kwh": used}
+        expected = kwh(data["expected_generation_kwh"], "expected_generation_kwh") if data.get("expected_generation_kwh") is not None else None
+        values = {"generation_kwh": generation, "self_consumed_kwh": used, "expected_generation_kwh": expected}
     row = log_record(model, household_id, log_date)
     created = row is None
     if created:
@@ -143,6 +154,9 @@ def save_log(model, household_id, log_date, data):
         db.session.add(row)
     for key, value in values.items():
         setattr(row, key, value)
+    db.session.flush()
+    from ..alerts.engine import refresh_after_log
+    refresh_after_log(household_id, log_date)
     db.session.commit()
     usage = meter_values(household_id, log_date, log_date)[1] if model is MeterReading else None
     return jsonify(item=serialize_log(row, usage)), 201 if created else 200
@@ -187,6 +201,9 @@ def remove_log(model, household_id, log_date):
     row = db.one_or_404(select(model).where(model.household_id == household_id,
                                          model.date == parse_date(log_date)))
     db.session.delete(row)
+    db.session.flush()
+    from ..alerts.engine import refresh_after_log
+    refresh_after_log(household_id, row.date)
     db.session.commit()
     return "", 204
 
