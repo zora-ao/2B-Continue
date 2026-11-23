@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import LoginCheck from "@/components/LoginCheck";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const location = useLocation();
   const [error, setError] = useState(null); // { message, field }
-  const justRegistered = useRef(false);
 
   // The fields were disabled while sending, so focus is lost; put it where the fix is.
   useEffect(() => {
@@ -22,20 +21,17 @@ export default function RegisterPage() {
 
   if (user === undefined) return <LoginCheck />;
 
-  // Once logged in, leave this page. New accounts have no household yet,
-  // so they go to Appliances, which walks them through setting one up.
-  if (user) return <Navigate to={justRegistered.current ? "/appliances" : "/"} replace />;
+  // Once this is a real account, go back to the page that sent us here. Guests stay to sign up.
+  if (user && !user.isGuest) return <Navigate to={location.state?.from ?? "/"} replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError(null);
-    justRegistered.current = true;
     try {
       await register({ name: form.get("name"), email: form.get("email"), password: form.get("password") });
     } catch (err) {
-      justRegistered.current = false;
       // 409 means the email is taken; anything else is most likely about the password.
       setError({ message: err.message, field: err.status === 409 ? "email" : "new-password" });
       setBusy(false);
@@ -45,7 +41,9 @@ export default function RegisterPage() {
   return (
     <AuthCard
       title="Create account"
-      subtitle="Track your appliances and stay within your energy budget."
+      subtitle={user?.isGuest
+        ? "Create an account to keep everything you added as a guest."
+        : "Track your appliances and stay within your energy budget."}
       footer={
         <>
           Already have an account?{" "}

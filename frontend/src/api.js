@@ -1,7 +1,7 @@
 // The API uses snake_case; the app uses camelCase. Only this file converts between them.
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 // These answer 401 for a wrong password or a dead login; refreshing would not help.
-const NO_REFRESH_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout"]);
+const NO_REFRESH_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout", "/auth/guest"]);
 
 // The login tokens live in HttpOnly cookies. Only the CSRF cookies are readable, by design.
 function readCookie(name) {
@@ -21,7 +21,8 @@ function send(path, options) {
 }
 
 // The access login lasts 15 minutes. Parallel 401s share one refresh.
-// Resolves "ok", "conflict" (another tab refreshed a moment ago), or false (the login is over).
+// Resolves "ok", "conflict" (another tab refreshed a moment ago), false (the login is over),
+// or "error" (server or network trouble: the login may still be fine, so keep it).
 let refreshing = null;
 function refreshLogin() {
   refreshing ??= fetch("/api/auth/refresh", {
@@ -30,12 +31,13 @@ function refreshLogin() {
   })
     .then((response) => {
       if (response.ok) return "ok";
-      return response.status === 409 ? "conflict" : false;
+      if (response.status === 409) return "conflict";
+      return response.status === 401 ? false : "error";
     })
-    .catch(() => false)
+    .catch(() => "error")
     .then((result) => {
-      // Fired once per failed refresh, not once per waiting request.
-      if (!result) window.dispatchEvent(new Event("auth:expired"));
+      // Fired once per ended login, not once per waiting request.
+      if (result === false) window.dispatchEvent(new Event("auth:expired"));
       return result;
     })
     .finally(() => {
@@ -49,7 +51,7 @@ async function request(path, options = {}) {
   // After a "conflict" the other tab's new cookies may land a moment later, so allow one more try.
   for (let attempt = 0; attempt < 2 && response.status === 401 && !NO_REFRESH_PATHS.has(path); attempt++) {
     const result = await refreshLogin();
-    if (!result) break;
+    if (result !== "ok" && result !== "conflict") break;
     response = await send(path, options);
     if (result === "ok") break;
   }
@@ -66,6 +68,10 @@ async function request(path, options = {}) {
     throw new Error("The server returned an invalid response.");
   }
   return data;
+}
+
+function fromUser(user) {
+  return { id: user.id, name: user.name, email: user.email, isGuest: user.is_guest };
 }
 
 function toApi(appliance) {
@@ -417,13 +423,15 @@ export const api = {
   }),
 
   // Login: the server keeps the tokens in cookies and returns only { user }.
-  me: async (options) => (await request("/auth/me", options)).user,
-  login: async (credentials) => (await request("/auth/login", {
+  me: async (options) => fromUser((await request("/auth/me", options)).user),
+  // A guest has no name, email or password. Registering later keeps their data.
+  guest: async () => fromUser((await request("/auth/guest", { method: "POST", body: "{}" })).user),
+  login: async (credentials) => fromUser((await request("/auth/login", {
     method: "POST", body: JSON.stringify(credentials),
-  })).user,
-  register: async (account) => (await request("/auth/register", {
+  })).user),
+  register: async (account) => fromUser((await request("/auth/register", {
     method: "POST", body: JSON.stringify(account),
-  })).user,
+  })).user),
   // Logout reads the refresh token, so it needs the refresh CSRF value.
   logout: () => request("/auth/logout", {
     method: "POST", headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },

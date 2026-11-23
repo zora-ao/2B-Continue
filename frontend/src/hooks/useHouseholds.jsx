@@ -1,14 +1,21 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/api";
+import HouseholdDialog from "@/components/HouseholdDialog";
 
 const SAVED_HOUSEHOLD_KEY = "energywise.householdId";
+const HouseholdsContext = createContext(null);
 
-export function useHouseholds() {
+// One list of households for every page, plus the dialog that adds one.
+// The dialog opens by itself when there are none yet.
+export function HouseholdsProvider({ children }) {
   const [households, setHouseholds] = useState([]);
   const [householdId, setHouseholdId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
+  const [setupOpen, setSetupOpen] = useState(false);
+  // The button that opened the dialog, so focus can go back to it. None when it opened by itself.
+  const opener = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,6 +31,10 @@ export function useHouseholds() {
         const match = items.find((household) => String(household.id) === saved);
         const chosen = match ?? items[0];
         setHouseholdId(chosen ? String(chosen.id) : "");
+        if (items.length === 0) {
+          opener.current = null;
+          setSetupOpen(true);
+        }
       })
       .catch((err) => {
         if (!cancelled) setError(err.message);
@@ -41,14 +52,41 @@ export function useHouseholds() {
     if (householdId) saveHousehold(householdId);
   }, [householdId]);
 
-  return {
+  function handleCreated(household) {
+    setHouseholds((items) => [...items, household]);
+    setHouseholdId(String(household.id));
+    setSetupOpen(false);
+  }
+
+  const value = {
     households,
     householdId,
     setHouseholdId,
     loading,
     error,
     reload: () => setReloadCount((count) => count + 1),
+    openSetup: () => {
+      opener.current = document.activeElement;
+      setSetupOpen(true);
+    },
   };
+
+  return (
+    <HouseholdsContext.Provider value={value}>
+      {children}
+      <HouseholdDialog
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        first={households.length === 0}
+        opener={opener}
+        onCreated={handleCreated}
+      />
+    </HouseholdsContext.Provider>
+  );
+}
+
+export function useHouseholds() {
+  return useContext(HouseholdsContext);
 }
 
 function readSavedHousehold() {

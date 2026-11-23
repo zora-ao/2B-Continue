@@ -20,8 +20,8 @@ export default function LoginPage() {
   }, [error]);
 
   if (user === undefined) return <LoginCheck />;
-  // Once logged in (or already logged in), go back to the page that sent us here.
-  if (user) return <Navigate to={location.state?.from ?? "/"} replace />;
+  // Once logged in to an account, go back to the page that sent us here. Guests stay to log in.
+  if (user && !user.isGuest) return <Navigate to={location.state?.from ?? "/"} replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -39,7 +39,9 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Log in"
-      subtitle="Welcome back. Log in to see your energy use."
+      subtitle={user?.isGuest
+        ? "Log in to add what you did as a guest to your account."
+        : "Welcome back. Log in to see your energy use."}
       footer={
         <>
           New to EnergyWise?{" "}
