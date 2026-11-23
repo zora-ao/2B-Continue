@@ -1,42 +1,38 @@
-import { AirVent, Plug, Sun } from "lucide-react";
+import { AirVent, Lightbulb, Plug, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-const TIPS = [
-  {
-    icon: AirVent,
-    color: "bg-warning-soft text-warning",
-    title: "Set aircon to 25°C",
-    text: "Each degree warmer cuts aircon use by about 6%.",
-  },
-  {
-    icon: Plug,
-    color: "bg-green-soft text-green",
-    title: "Unplug idle devices",
-    text: "Standby power can add about ₱60 a month.",
-  },
-  {
-    icon: Sun,
-    color: "bg-yellow-soft text-yellow",
-    title: "Run heavy loads at midday",
-    text: "Use solar output for laundry and ironing.",
-  },
-];
+// The server picks the tips (e.g. the aircon tip only shows if you have one).
+// This adds an icon and color for each tip id.
+const TIP_STYLES = {
+  idle_devices: { icon: Plug, color: "bg-green-soft text-green" },
+  aircon: { icon: AirVent, color: "bg-warning-soft text-warning" },
+  usage: { icon: Receipt, color: "bg-yellow-soft text-yellow" },
+};
+const DEFAULT_STYLE = { icon: Lightbulb, color: "bg-secondary text-foreground" };
 
-// Simple saving tips under the plan.
-export default function BudgetTips() {
+// Saving tips under the plan.
+//   tips – [{ id, title, description }] from the plan
+export default function BudgetTips({ tips }) {
+  if (tips.length === 0) {
+    return null;
+  }
+
   return (
     <section className="flex flex-col gap-4">
       <h2 className="font-heading text-lg">Ways to stay within budget</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {TIPS.map((tip) => (
-          <Card key={tip.title} className="gap-3 p-5">
-            <div className={`flex size-9 items-center justify-center rounded-lg ${tip.color}`}>
-              <tip.icon className="size-5" />
-            </div>
-            <h3 className="font-medium">{tip.title}</h3>
-            <p className="text-sm text-muted-foreground">{tip.text}</p>
-          </Card>
-        ))}
+        {tips.map((tip) => {
+          const { icon: TipIcon, color } = TIP_STYLES[tip.id] ?? DEFAULT_STYLE;
+          return (
+            <Card key={tip.id} className="gap-3 p-5">
+              <div className={`flex size-9 items-center justify-center rounded-lg ${color}`}>
+                <TipIcon className="size-5" />
+              </div>
+              <h3 className="font-medium">{tip.title}</h3>
+              <p className="text-sm text-muted-foreground">{tip.description}</p>
+            </Card>
+          );
+        })}
       </div>
     </section>
   );

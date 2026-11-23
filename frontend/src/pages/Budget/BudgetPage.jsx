@@ -5,82 +5,131 @@ import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { useHouseholdAppliances } from "@/hooks/useHouseholdAppliances";
-import { makePlan } from "@/lib/budget";
+import { useHouseholds } from "@/hooks/useHouseholds";
+import { parseBudget } from "@/lib/budget";
 import BudgetForm from "./BudgetForm";
 import BudgetTips from "./BudgetTips";
 import PlanTable from "./PlanTable";
 
-// The Budget Planner: set a monthly budget, generate a plan of how many
-// hours each appliance should run, adjust it, and save the new hours.
+// The Budget Planner: set a monthly budget, let the server plan how many
+// hours each appliance should run, adjust it, and save the plan.
+// Saving keeps a monthly plan; it does not change the appliances' hours.
 export default function BudgetPage() {
-  const {
-    households,
-    household,
-    householdId,
-    setHouseholdId,
-    appliances,
-    setAppliances,
-    period,
-    loading,
-    error,
-    setError,
-    reload,
-  } = useHouseholdAppliances();
+  const households = useHouseholds();
+  const { householdId } = households;
 
+  const [planner, setPlanner] = useState(null); // { defaults, preview, savedPlan }
+  const [plan, setPlan] = useState(null); // the plan on screen
   const [budget, setBudget] = useState(""); // text, like every input
   const [style, setStyle] = useState("balanced");
-  const [plan, setPlan] = useState([]);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [justSaved, setJustSaved] = useState(false);
+  const [reloadCount, setReloadCount] = useState(0);
 
-  // Start from the household's budget.
+  // Load the planner for the chosen household.
+  // Show this month's saved plan if there is one, otherwise a fresh preview.
   useEffect(() => {
-    if (household) setBudget(String(household.monthly_budget));
-  }, [household]);
-
-  // Start the plan from the appliances' current hours.
-  useEffect(() => {
-    setPlan(startingPlan(appliances));
-  }, [appliances]);
-
-  function handleGenerate() {
-    setPlan(makePlan(appliances, Number(budget), period.rate, period.days, style));
-    setSaved(false);
-  }
-
-  function handleReset() {
-    setPlan(startingPlan(appliances));
-    setSaved(false);
-  }
-
-  function handleHoursChange(id, hours) {
-    setPlan(plan.map((item) => (item.id === id ? { ...item, hoursPerDay: hours } : item)));
-    setSaved(false);
-  }
-
-  // Saves only the appliances whose hours changed.
-  async function handleSave() {
-    setSaving(true);
+    if (!householdId) return;
+    const controller = new AbortController();
+    setLoading(true);
     setError("");
+    setJustSaved(false);
+
+    api
+      .getBudgetPlanner(householdId, { signal: controller.signal })
+      .then((data) => {
+        setPlanner(data);
+        showPlan(data.savedPlan ? data.savedPlan.plan : data.preview);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") setError(err.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [householdId, reloadCount]);
+
+  function showPlan(newPlan) {
+    setPlan(newPlan);
+    setBudget(String(newPlan.budget));
+    setStyle(newPlan.style);
+  }
+
+  // Every flexible row's current hours, so the server keeps them.
+  function currentAdjustments(changedId, changedHours) {
+    return plan.items
+      .filter((item) => !item.isMustHave)
+      .map((item) => ({
+        id: item.id,
+        hours: item.id === changedId ? changedHours : item.hoursPerDay,
+      }));
+  }
+
+  // Runs one server call with the busy flag and error message handled.
+  async function run(action) {
+    setBusy(true);
+    setError("");
+    setJustSaved(false);
     try {
-      const changed = plan.filter((item) => item.hoursPerDay !== item.originalHours);
-      const updated = [...appliances];
-      for (const item of changed) {
-        const savedItem = await api.saveAppliance(householdId, item, item.id, period.month);
-        const index = updated.findIndex((appliance) => appliance.id === savedItem.id);
-        updated[index] = savedItem;
-      }
-      setAppliances(updated);
-      setSaved(true);
+      await action();
     } catch (err) {
       setError(err.message);
     } finally {
-      setSaving(false);
+      setBusy(false);
     }
   }
 
-  const hasChanges = plan.some((item) => item.hoursPerDay !== item.originalHours);
+  function handleGenerate() {
+    run(async () => {
+      const newPlan = await api.generateBudgetPlan(householdId, {
+        month: plan.month,
+        budget: parseBudget(budget),
+        style,
+        adjustments: [],
+      });
+      showPlan(newPlan);
+    });
+  }
+
+  function handleHoursChange(id, hours) {
+    run(async () => {
+      const newPlan = await api.generateBudgetPlan(householdId, {
+        month: plan.month,
+        budget: plan.budget,
+        style: plan.style,
+        adjustments: currentAdjustments(id, hours),
+      });
+      setPlan(newPlan);
+    });
+  }
+
+  function handleSave() {
+    run(async () => {
+      const savedPlan = await api.saveBudgetPlan(householdId, {
+        month: plan.month,
+        budget: plan.budget,
+        style: plan.style,
+        adjustments: currentAdjustments(),
+      });
+      setPlanner({ ...planner, savedPlan });
+      showPlan(savedPlan.plan);
+      setJustSaved(true);
+    });
+  }
+
+  // Back to the household's budget and a fresh balanced plan (unsaved).
+  function handleReset() {
+    setError("");
+    setJustSaved(false);
+    showPlan(planner.preview);
+  }
+
+  const isLoading = households.loading || loading;
+  const loadError = households.error || (!plan && error);
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,14 +137,14 @@ export default function BudgetPage() {
         title="Budget Planner"
         subtitle="Set a monthly budget and we'll plan which appliances to use, and for how long."
         actions={
-          period && (
+          plan && (
             <>
-              <Button variant="outline" size="lg" disabled={!hasChanges || saving} onClick={handleReset}>
+              <Button variant="outline" size="lg" disabled={busy} onClick={handleReset}>
                 Reset
               </Button>
-              <Button size="lg" disabled={!hasChanges || saving} onClick={handleSave}>
+              <Button size="lg" disabled={busy || plan.items.length === 0} onClick={handleSave}>
                 <Check />
-                {saving ? "Saving..." : "Save plan"}
+                {busy ? "Working..." : "Save plan"}
               </Button>
             </>
           )
@@ -103,31 +152,32 @@ export default function BudgetPage() {
       />
 
       <HouseholdPicker
-        households={households}
+        households={households.households}
         value={householdId}
-        onChange={setHouseholdId}
-        disabled={loading || saving}
+        onChange={households.setHouseholdId}
+        disabled={isLoading || busy}
       />
 
-      {error && (
+      {loadError && (
         <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-danger p-4 text-danger">
-          {error}
-          {!period && (
-            <Button variant="outline" onClick={reload}>
-              Retry loading
-            </Button>
-          )}
+          {loadError}
+          <Button
+            variant="outline"
+            onClick={() => (households.error ? households.reload() : setReloadCount((count) => count + 1))}
+          >
+            Retry loading
+          </Button>
         </div>
       )}
-      {saved && !hasChanges && (
-        <p role="status" className="text-green">
-          Plan saved. Your appliances now use the new hours.
+      {plan && error && (
+        <p role="alert" className="text-danger">
+          {error}
         </p>
       )}
 
-      {loading && <p role="status">Loading your appliances...</p>}
+      {isLoading && <p role="status">Loading your budget plan...</p>}
 
-      {!loading && !error && households.length === 0 && (
+      {!isLoading && !households.error && households.households.length === 0 && (
         <p className="text-muted-foreground">
           No household yet. Set one up on the{" "}
           <Link to="/appliances" className="text-primary underline">
@@ -137,42 +187,58 @@ export default function BudgetPage() {
         </p>
       )}
 
-      {period && !loading && (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="w-full lg:w-[360px] lg:shrink-0">
-            <BudgetForm
-              budget={budget}
-              onBudgetChange={setBudget}
-              rate={period.rate}
-              days={period.days}
-              style={style}
-              onStyleChange={setStyle}
-              onGenerate={handleGenerate}
-              busy={saving}
-            />
-          </div>
+      {plan && !isLoading && (
+        <>
+          <SavedPlanStatus savedPlan={planner.savedPlan} justSaved={justSaved} />
 
-          <div className="flex min-w-0 flex-1 flex-col gap-6">
-            <PlanTable
-              plan={plan}
-              budget={Number(budget) || 0}
-              rate={period.rate}
-              days={period.days}
-              onHoursChange={handleHoursChange}
-              busy={saving}
-            />
-            <BudgetTips />
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="w-full lg:w-[360px] lg:shrink-0">
+              <BudgetForm
+                budget={budget}
+                onBudgetChange={setBudget}
+                rate={plan.rate}
+                days={plan.days}
+                style={style}
+                onStyleChange={setStyle}
+                onGenerate={handleGenerate}
+                busy={busy}
+              />
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-6">
+              <PlanTable plan={plan} onHoursChange={handleHoursChange} busy={busy} />
+              <BudgetTips tips={plan.tips} />
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 }
 
-// The plan before any trimming: every appliance at its current hours.
-function startingPlan(appliances) {
-  return appliances.map((appliance) => ({
-    ...appliance,
-    originalHours: appliance.hoursPerDay,
-  }));
+// One line about this month's saved plan.
+function SavedPlanStatus({ savedPlan, justSaved }) {
+  if (justSaved) {
+    return (
+      <p role="status" className="text-green">
+        Plan saved for this month.
+      </p>
+    );
+  }
+  if (!savedPlan) {
+    return null;
+  }
+  if (savedPlan.isStale) {
+    return (
+      <p role="status" className="text-warning">
+        Your appliances or household changed since this plan was saved. Generate and save
+        again to update it.
+      </p>
+    );
+  }
+  const savedOn = new Date(savedPlan.updatedAt).toLocaleDateString("en-PH", {
+    month: "short",
+    day: "numeric",
+  });
+  return <p className="text-muted-foreground">Showing your saved plan from {savedOn}.</p>;
 }

@@ -3,18 +3,15 @@ import { api } from "@/api";
 
 const SAVED_HOUSEHOLD_KEY = "energywise.householdId";
 
-// Loads the households, picks one (the last one used, or the first),
-// and loads that household's appliances.
-export function useHouseholdAppliances() {
+// Loads the households and picks one: the last one used, or the first.
+// Pages then load their own data for `householdId`.
+export function useHouseholds() {
   const [households, setHouseholds] = useState([]);
   const [householdId, setHouseholdId] = useState("");
-  const [appliances, setAppliances] = useState([]);
-  const [period, setPeriod] = useState(null); // { rate, days, month }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
 
-  // 1. Load the households.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -29,12 +26,12 @@ export function useHouseholdAppliances() {
         const match = items.find((household) => String(household.id) === saved);
         const chosen = match ?? items[0];
         setHouseholdId(chosen ? String(chosen.id) : "");
-        if (!chosen) setLoading(false);
       })
       .catch((err) => {
-        if (cancelled) return;
-        setError(err.message);
-        setLoading(false);
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -42,43 +39,17 @@ export function useHouseholdAppliances() {
     };
   }, [reloadCount]);
 
-  // 2. Load the chosen household's appliances.
+  // Remember the choice for next time (and for the other pages).
   useEffect(() => {
-    if (!householdId) return;
-    const controller = new AbortController();
-    setLoading(true);
-    setError("");
-
-    api
-      .listAppliances(householdId, { signal: controller.signal })
-      .then((data) => {
-        setAppliances(data.items);
-        setPeriod({ rate: data.electricity_rate, days: data.days_in_month, month: data.month });
-        saveHousehold(householdId);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") setError(err.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [householdId, reloadCount]);
-
-  const household = households.find((item) => String(item.id) === householdId) ?? null;
+    if (householdId) saveHousehold(householdId);
+  }, [householdId]);
 
   return {
     households,
-    household,
     householdId,
     setHouseholdId,
-    appliances,
-    setAppliances,
-    period,
     loading,
     error,
-    setError,
     reload: () => setReloadCount((count) => count + 1),
   };
 }

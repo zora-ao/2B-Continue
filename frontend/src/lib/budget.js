@@ -1,21 +1,15 @@
-// Budget planning: given a monthly budget, suggest how many hours a day
-// each appliance should run so the bill stays within it.
-//
-// Rules:
-//   - Must-have appliances keep their hours.
-//   - Flexible ones are trimmed first, starting with the most power-hungry.
-//   - Hours are trimmed in half-hour steps.
-import { dailyKwh, monthlyCost } from "./energy";
+// Budget planner helpers for the page. The plan itself (which hours to
+// trim) is calculated by the server: see api.generateBudgetPlan.
 
-// How much of the budget the plan aims to use.
-// Strict leaves the most room for surprises on the bill.
+// Labels for the server's plan styles.
 export const PLAN_STYLES = [
-  { value: "strict", label: "Strict", share: 0.85 },
-  { value: "balanced", label: "Balanced", share: 0.95 },
-  { value: "comfort", label: "Comfort", share: 1 },
+  { value: "strict", label: "Strict", hint: "Aims for 90% of your budget, leaving room for surprises." },
+  { value: "balanced", label: "Balanced", hint: "Uses up to your full budget." },
+  { value: "comfort", label: "Comfort", hint: "Shares the cuts across all flexible appliances." },
 ];
 
 // How much energy the budget buys: ₱2,000 at ₱12/kWh → 166.7 kWh a month.
+// Worked out here (not on the server) so it updates while typing.
 export function energyAllowance(budget, rate, days) {
   const monthlyKwh = budget / rate;
   return {
@@ -25,55 +19,17 @@ export function energyAllowance(budget, rate, days) {
   };
 }
 
-// Returns a copy of the appliances with suggested hoursPerDay.
-// Each item also gets originalHours so the page can show "was 4h".
-export function makePlan(appliances, budget, rate, days, style) {
-  const share = PLAN_STYLES.find((item) => item.value === style).share;
-  const target = budget * share;
-
-  const plan = appliances.map((appliance) => ({
-    ...appliance,
-    originalHours: appliance.hoursPerDay,
-  }));
-
-  // Most power-hungry flexible appliances first.
-  const flexible = plan
-    .filter((appliance) => !appliance.isMustHave)
-    .sort((a, b) => b.watts * b.quantity - a.watts * a.quantity);
-
-  for (const appliance of flexible) {
-    const overspend = planCost(plan, rate, days) - target;
-    if (overspend <= 0) {
-      break;
-    }
-
-    // Cost of running this appliance one hour a day for the whole month.
-    const costPerHour = monthlyCost({ ...appliance, hoursPerDay: 1 }, rate, days);
-    const hoursToCut = roundUpToHalf(overspend / costPerHour);
-    appliance.hoursPerDay = Math.max(0, appliance.hoursPerDay - hoursToCut);
-  }
-
-  return plan;
+// Turns a typed budget into a number, or null when it isn't valid.
+// The server accepts 0 or more, with up to 2 decimal places.
+export function parseBudget(text) {
+  if (text.trim() === "") return null;
+  const budget = Number(text);
+  if (!(budget >= 0)) return null;
+  const hasAtMostTwoDecimals = Math.abs(budget * 100 - Math.round(budget * 100)) < 0.000001;
+  return hasAtMostTwoDecimals ? budget : null;
 }
 
-// Totals for the plan's "Total" row.
-export function planTotals(plan, rate, days) {
-  let kwhPerDay = 0;
-  for (const appliance of plan) {
-    kwhPerDay += dailyKwh(appliance);
-  }
-  return { kwhPerDay, costPerMonth: planCost(plan, rate, days) };
-}
-
-function planCost(plan, rate, days) {
-  let total = 0;
-  for (const appliance of plan) {
-    total += monthlyCost(appliance, rate, days);
-  }
-  return total;
-}
-
-// 1.2 → 1.5, 2 → 2
-function roundUpToHalf(hours) {
-  return Math.ceil(hours * 2) / 2;
+// Rounds hours to the server's 3 decimal places: 0.8330000001 → 0.833
+export function roundHours(hours) {
+  return Math.round(hours * 1000) / 1000;
 }

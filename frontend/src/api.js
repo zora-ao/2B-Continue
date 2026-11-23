@@ -44,6 +44,59 @@ function fromApi(item) {
 }
 
 const appliancePath = (householdId) => `/households/${householdId}/appliances`;
+const plannerPath = (householdId) => `/households/${householdId}/budget-planner`;
+
+// --- Budget planner -------------------------------------------------
+
+// What the page sends: { month, budget, style, adjustments: [{ id, hours }] }
+function toPlanRequest(request) {
+  return {
+    month: request.month,
+    monthly_budget: request.budget,
+    style: request.style,
+    adjustments: request.adjustments.map((adjustment) => ({
+      appliance_id: adjustment.id,
+      hours_per_day: adjustment.hours,
+    })),
+  };
+}
+
+// A plan calculated by the server.
+function fromPlan(plan) {
+  return {
+    month: plan.month,
+    days: plan.days_in_month,
+    style: plan.style,
+    budget: plan.monthly_budget,
+    rate: plan.electricity_rate,
+    fitsBudget: plan.fits_budget,
+    items: plan.items.map((item) => ({
+      id: item.appliance_id,
+      name: item.name,
+      type: item.appliance_type || "other",
+      watts: item.watts,
+      quantity: item.quantity,
+      isMustHave: item.is_must_have,
+      originalHours: item.original_hours_per_day,
+      hoursPerDay: item.hours_per_day,
+      isReduced: item.is_reduced,
+      dailyKwh: item.estimated_daily_kwh,
+      monthlyCost: item.estimated_monthly_cost,
+    })),
+    totals: {
+      dailyKwh: plan.totals.estimated_daily_kwh,
+      monthlyCost: plan.totals.estimated_monthly_cost,
+      savings: plan.totals.estimated_monthly_savings,
+    },
+    warnings: plan.warnings,
+    tips: plan.tips,
+  };
+}
+
+function fromSavedPlan(saved) {
+  if (!saved) return null;
+  return { isStale: saved.is_stale, updatedAt: saved.updated_at, plan: fromPlan(saved.plan) };
+}
 
 export const api = {
   health: () => request("/health"),
@@ -64,4 +117,32 @@ export const api = {
   deleteAppliance: (householdId, id) => request(`${appliancePath(householdId)}/${id}`, {
     method: "DELETE",
   }),
+
+  // Defaults, an unsaved preview, and this month's saved plan (or null).
+  getBudgetPlanner: async (householdId, options) => {
+    const data = await request(plannerPath(householdId), options);
+    return {
+      defaults: {
+        month: data.defaults.month,
+        budget: data.defaults.monthly_budget,
+        style: data.defaults.style,
+      },
+      preview: fromPlan(data.preview),
+      savedPlan: fromSavedPlan(data.saved_plan),
+    };
+  },
+  // Calculates a plan without saving it.
+  generateBudgetPlan: async (householdId, planRequest) => {
+    const data = await request(`${plannerPath(householdId)}/generate`, {
+      method: "POST", body: JSON.stringify(toPlanRequest(planRequest)),
+    });
+    return fromPlan(data.plan);
+  },
+  // Saves the plan for that month (replaces any earlier one).
+  saveBudgetPlan: async (householdId, planRequest) => {
+    const data = await request(`${plannerPath(householdId)}/plan`, {
+      method: "PUT", body: JSON.stringify(toPlanRequest(planRequest)),
+    });
+    return fromSavedPlan(data.saved_plan);
+  },
 };

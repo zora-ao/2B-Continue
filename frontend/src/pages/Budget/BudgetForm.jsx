@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PLAN_STYLES, energyAllowance } from "@/lib/budget";
+import { PLAN_STYLES, energyAllowance, parseBudget } from "@/lib/budget";
 import { formatKwh, formatPeso } from "@/lib/energy";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +21,10 @@ export default function BudgetForm({
   onGenerate,
   busy,
 }) {
-  const budgetNumber = Number(budget);
-  const isValidBudget = budget.trim() !== "" && budgetNumber > 0;
+  const budgetNumber = parseBudget(budget);
+  const isValidBudget = budgetNumber !== null;
   const allowance = isValidBudget ? energyAllowance(budgetNumber, rate, days) : null;
+  const styleHint = PLAN_STYLES.find((option) => option.value === style)?.hint;
 
   return (
     <Card>
@@ -46,7 +47,7 @@ export default function BudgetForm({
             onChange={(event) => onBudgetChange(event.target.value)}
           />
           {!isValidBudget && (
-            <p className="text-sm text-danger">Enter a budget more than ₱0</p>
+            <p className="text-sm text-danger">Enter a budget of ₱0 or more (up to 2 decimals)</p>
           )}
         </div>
 
@@ -88,8 +89,7 @@ export default function BudgetForm({
             ))}
           </div>
           <p className="text-sm text-muted-foreground">
-            Must-have appliances (lock icon) keep their hours. Flexible ones are
-            trimmed first, starting with the most power-hungry.
+            {styleHint} Must-have appliances (lock icon) always keep their hours.
           </p>
         </div>
 
