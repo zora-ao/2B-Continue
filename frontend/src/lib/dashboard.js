@@ -1,5 +1,3 @@
-import { formatNumber, formatPeso } from "@/lib/energy";
-
 export const CHART_PERIODS = [
   { value: "day", label: "Day", range: "Last 14 days", limit: "daily limit" },
   { value: "week", label: "Week", range: "Last 8 weeks", limit: "weekly limit" },
@@ -34,10 +32,6 @@ export function chartLabel(startDate, period) {
   return date.toLocaleDateString("en-US", { month: "short" });
 }
 
-export function shortDate(isoDate) {
-  return toDate(isoDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 export function todayIso() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -51,21 +45,4 @@ export function parseKwh(text) {
   if (!(kwh >= 0)) return null;
   const hasAtMostThreeDecimals = Math.abs(kwh * 1000 - Math.round(kwh * 1000)) < 0.000001;
   return hasAtMostThreeDecimals ? kwh : null;
-}
-
-export function alertDescription(alert) {
-  switch (alert.id) {
-    case "projected_budget":
-      return `At this pace your bill will be about ${formatPeso(alert.projectedBill)}, ${formatPeso(alert.overBudgetBy)} over budget.`;
-    case "daily_limit":
-      return `On ${shortDate(alert.date)} you used ${formatNumber(alert.kwh)} kWh vs your ${formatNumber(alert.limitKwh)} kWh limit.`;
-    case "unusual_usage":
-      return `On ${shortDate(alert.date)} you used ${formatNumber(alert.kwh)} kWh vs your ${formatNumber(alert.averageKwh)} kWh average.`;
-    case "biggest_cost":
-      return alert.reduceHours
-        ? `Cutting ${formatNumber(alert.reduceHours)} hour a day saves about ${formatPeso(alert.monthlySavings)} a month.`
-        : "It's a must-have, so the planner keeps its hours.";
-    default:
-      return "";
-  }
 }
