@@ -1,8 +1,9 @@
 # Kuryenta
 
-**Know where your electricity money goes and how to spend less of it.**
+**Alamin ang gastos bago dumating ang bill.**
+*Know the cost before the bill arrives.*
 
-Kuryenta is a household energy-saving web app built around **SDG 7: Affordable and Clean Energy**. You enter your appliances, budget and meter readings. Kuryenta then shows what each appliance costs, builds a monthly plan that fits your budget, warns you before the bill gets out of hand, and helps you decide whether solar panels are worth it.
+Kuryenta is a household energy-saving web app built around **SDG 7: Affordable and Clean Energy**. Log your meter readings, see what each appliance costs to run, plan your daily usage against a peso budget, and find out whether solar fits your home, all before the bill arrives.
 
 `React 19` · `Vite 7` · `Tailwind CSS v4` · `shadcn/ui` · `Flask 3` · `SQLAlchemy 2` · `PostgreSQL (Supabase)` · `Vercel` · `Render`
 
@@ -33,14 +34,25 @@ Kuryenta is a household energy-saving web app built around **SDG 7: Affordable a
 
 ## Why Kuryenta
 
-Most households only find out what they used when the bill arrives, and by then it's too late to change anything. The bill also doesn't say *which* appliance caused it.
+When the electricity bill comes in higher than expected, the household is left guessing what happened.
 
-Kuryenta moves that moment earlier:
+- *Was it the extra hours of aircon?*
+- *What if we ran it one hour less each day? Would next month fit the budget?*
+- *Would a solar setup match what we use and what we can afford?*
 
-- **Before the month:** plan how many hours each appliance can run and still stay within budget.
-- **During the month:** log meter readings and see right away whether you're on track.
-- **When something goes wrong:** get an alert about a usage spike, a day over the limit, or a projected bill above budget.
-- **For the long term:** see which solar system size fits your usage and budget, and how long it would take to pay for itself.
+The bill only gives a total. It doesn't say which appliance caused it, and it arrives when the month is already over.
+
+Kuryenta helps a household answer those questions **while there's still time to adjust**:
+
+- **Track:** log meter readings and see each day whether you're on track for your budget.
+- **Understand:** see what each appliance costs to run, in kWh and in pesos.
+- **Plan:** try different daily schedules against a peso budget before you commit to them.
+- **Get warned:** receive an alert for a usage spike, a day over the limit, or a bill heading over budget.
+- **Explore solar:** compare system sizes based on your usage, location and installation budget, and see how long each would take to pay for itself.
+
+> ***Kuryenta*** comes from ***kuryente*** (electricity) and ***kuwenta*** (to count, to compute).
+> **Kuwentahin ang kuryente habang may oras pang mag-adjust.**
+> *Count your electricity while there's still time to adjust.*
 
 ---
 
