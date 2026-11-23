@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Bell, LayoutDashboard, Menu, Plug, Sun, Wallet, X, Zap } from "lucide-react";
+import { Bell, LayoutDashboard, Menu, Plug, Sun, Wallet, X } from "lucide-react";
+import Logo from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -10,17 +11,6 @@ const LINKS = [
   { to: "/solar", label: "Solar", icon: Sun },
   { to: "/alerts", label: "Alerts", icon: Bell },
 ];
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Zap className="size-[18px]" />
-      </div>
-      <span className="font-heading text-xl font-medium">EnergyWise</span>
-    </div>
-  );
-}
 
 function NavLinks({ onNavigate }) {
   return LINKS.map(({ to, label, icon: LinkIcon }) => (
