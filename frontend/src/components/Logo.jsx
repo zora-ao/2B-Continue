@@ -1,12 +1,17 @@
-import { Zap } from "lucide-react";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
+import logoMarkDark from "@/assets/logo-mark-dark.png";
+import logoMarkLight from "@/assets/logo-mark-light.png";
 
 export default function Logo({ compact = false }) {
+  const lightSrc = compact ? logoMarkLight : logoLight;
+  const darkSrc = compact ? logoMarkDark : logoDark;
+  const sizeClass = compact ? "h-8 w-auto" : "h-7 w-auto";
+
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Zap className="size-[18px]" />
-      </div>
-      <span className={compact ? "sr-only" : "font-heading text-xl font-medium"}>Kuryenta</span>
+    <div className="flex items-center">
+      <img src={lightSrc} alt="Kuryenta" className={`${sizeClass} block select-none dark:hidden`} />
+      <img src={darkSrc} alt="Kuryenta" className={`${sizeClass} hidden select-none dark:block`} />
     </div>
   );
 }
