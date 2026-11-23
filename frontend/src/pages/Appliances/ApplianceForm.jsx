@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,10 +18,14 @@ import {
   parseApplianceForm,
 } from "@/lib/appliances";
 import { dailyKwh, formatKwh, formatPeso, monthlyCost } from "@/lib/energy";
+import { scanToFields } from "@/lib/scan";
+import ScanControls from "./ScanControls";
 
 export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate, days }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  // Bumped when the form resets, so the scan controls start fresh (no stale "Filled" message).
+  const [scanKey, setScanKey] = useState(0);
 
   useEffect(() => {
     setForm(editing ? applianceToForm(editing) : EMPTY_FORM);
@@ -33,13 +36,26 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
     setForm({ ...form, [field]: value });
   }
 
+  // A scan only suggests name, type and watts; the user still checks them and adds hours.
+  function applyScan(result) {
+    setForm((current) => ({ ...current, ...scanToFields(result) }));
+    setErrors((current) => ({ ...current, name: undefined, watts: undefined }));
+    document.getElementById("hoursPerDay")?.focus();
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (busy) return;
     const result = parseApplianceForm(form);
     setErrors(result.errors);
+    // Move focus to the first field that needs fixing.
+    const firstInvalid = ["name", "watts", "hoursPerDay", "quantity"].find((field) => result.errors[field]);
+    if (firstInvalid) document.getElementById(firstInvalid)?.focus();
     if (result.appliance) {
-      if (await onSubmit(result.appliance)) setForm(EMPTY_FORM);
+      if (await onSubmit(result.appliance)) {
+        setForm(EMPTY_FORM);
+        setScanKey((key) => key + 1);
+      }
     }
   }
 
@@ -56,11 +72,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <fieldset disabled={busy} className="flex min-w-0 flex-col gap-4">
-            {/* The camera scan comes later (Google Vision). */}
-            <Button type="button" variant="secondary" size="lg" disabled>
-              <Camera />
-              Scan appliance (coming soon)
-            </Button>
+            {!editing && <ScanControls key={scanKey} onResult={applyScan} disabled={busy} />}
 
             <Field id="name" label="Name" error={errors.name}>
               <Input
@@ -68,6 +80,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                 placeholder="e.g. Bedroom aircon"
                 value={form.name}
                 aria-invalid={Boolean(errors.name)}
+                  aria-describedby={errors.name ? "name-error" : undefined}
                 onChange={(event) => updateField("name", event.target.value)}
               />
             </Field>
@@ -96,6 +109,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                   placeholder="900"
                   value={form.watts}
                   aria-invalid={Boolean(errors.watts)}
+                  aria-describedby={errors.watts ? "watts-error" : undefined}
                   onChange={(event) => updateField("watts", event.target.value)}
                 />
               </Field>
@@ -110,6 +124,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                   placeholder="4"
                   value={form.hoursPerDay}
                   aria-invalid={Boolean(errors.hoursPerDay)}
+                  aria-describedby={errors.hoursPerDay ? "hoursPerDay-error" : undefined}
                   onChange={(event) => updateField("hoursPerDay", event.target.value)}
                 />
               </Field>
@@ -123,6 +138,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                 step="1"
                 value={form.quantity}
                 aria-invalid={Boolean(errors.quantity)}
+                  aria-describedby={errors.quantity ? "quantity-error" : undefined}
                 onChange={(event) => updateField("quantity", event.target.value)}
               />
             </Field>
@@ -164,7 +180,11 @@ function Field({ id, label, error, children }) {
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

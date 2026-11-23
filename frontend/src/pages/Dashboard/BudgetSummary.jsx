@@ -52,7 +52,7 @@ function BudgetRing({ progress, color, spent, budget }) {
 
   return (
     <div className="relative mx-auto size-48">
-      <svg viewBox="0 0 200 200" className="size-full -rotate-90">
+      <svg viewBox="0 0 200 200" aria-hidden="true" className="size-full -rotate-90">
         <circle cx="100" cy="100" r={radius} fill="none" strokeWidth="16" className="stroke-secondary" />
         {filled > 0 && <circle
           cx="100"

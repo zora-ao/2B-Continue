@@ -22,11 +22,12 @@ export default function UsageChart({ chart, period, onPeriodChange, busy }) {
             {periodInfo.range} · dashed line = your {formatKwh(fullLimit)} {periodInfo.limit}
           </CardDescription>
         </div>
-        <div className="flex gap-1 rounded-lg bg-secondary p-1">
+        <div role="group" aria-label="Chart period" className="flex gap-1 rounded-lg bg-secondary p-1">
           {CHART_PERIODS.map((option) => (
             <Button
               key={option.value}
               size="sm"
+              aria-pressed={period === option.value}
               variant={period === option.value ? "default" : "ghost"}
               className={cn(period !== option.value && "text-muted-foreground")}
               disabled={busy}
@@ -39,7 +40,30 @@ export default function UsageChart({ chart, period, onPeriodChange, busy }) {
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        <div className="relative">
+        {/* Screen readers get the numbers as a table; the bars below are visual only. */}
+        {hasData && (
+          <table className="sr-only">
+            <caption>Your usage, {periodInfo.range}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Period</th>
+                <th scope="col">Used</th>
+                <th scope="col">Limit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((point) => (
+                <tr key={point.startDate}>
+                  <th scope="row">{chartLabel(point.startDate, period)}</th>
+                  <td>{point.kwh === null ? "No reading" : formatKwh(point.kwh)}</td>
+                  <td>{formatKwh(point.limitKwh)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <div className="relative" aria-hidden={hasData || undefined}>
           <div className="flex h-52 items-end gap-1.5 sm:gap-2">
             {points.map((point, index) => (
               <Bar
@@ -57,7 +81,7 @@ export default function UsageChart({ chart, period, onPeriodChange, busy }) {
           )}
         </div>
 
-        <div className="flex gap-1.5 sm:gap-2">
+        <div aria-hidden="true" className="flex gap-1.5 sm:gap-2">
           {points.map((point) => (
             <span key={point.startDate} className="flex-1 text-center text-xs text-muted-foreground">
               {chartLabel(point.startDate, period)}
@@ -65,7 +89,7 @@ export default function UsageChart({ chart, period, onPeriodChange, busy }) {
           ))}
         </div>
 
-        <div className="flex gap-5 text-xs text-muted-foreground">
+        <div aria-hidden="true" className="flex gap-5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-green" /> Within limit
           </span>
