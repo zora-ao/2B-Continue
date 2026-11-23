@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth_bp
+from .guests import create_guest, delete_abandoned_guests
 from .tokens import (REFRESH_GRACE, issue_tokens, prune_refresh_tokens, serialize_user,
                      token_response, wants_mobile)
 from .validation import normalize_email, validate_login, validate_registration
@@ -70,6 +71,15 @@ def login():
     return token_response(user, access, refresh, mobile=wants_mobile())
 
 
+@auth_bp.post("/guest")
+def guest():
+    delete_abandoned_guests()
+    user = create_guest()
+    access, refresh = issue_tokens(user)
+    db.session.commit()
+    return token_response(user, access, refresh, mobile=wants_mobile(), status=201)
+
+
 @auth_bp.post("/refresh")
 def refresh():
     verify_jwt_in_request(refresh=True)
@@ -88,6 +98,7 @@ def refresh():
     if user is None:
         return jsonify(error="Please log in."), 401
     row.used_at = now
+    prune_refresh_tokens(user.id)
     access, refresh_token = issue_tokens(user)
     db.session.commit()
     return token_response(user, access, refresh_token,
