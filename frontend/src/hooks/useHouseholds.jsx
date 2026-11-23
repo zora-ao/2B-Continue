@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/api";
 import HouseholdDialog from "@/components/HouseholdDialog";
 import HouseholdSharingDialog from "@/components/HouseholdSharingDialog";
+import DeleteHouseholdDialog from "@/components/DeleteHouseholdDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 const SAVED_HOUSEHOLD_KEY = "energywise.householdId";
@@ -18,6 +19,7 @@ export function HouseholdsProvider({ children }) {
   const [reloadCount, setReloadCount] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
   const [sharing, setSharing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   // The button that opened the dialog, so focus can go back to it. None when it opened by itself.
   const opener = useRef(null);
 
@@ -69,6 +71,14 @@ export function HouseholdsProvider({ children }) {
     setSharing({ mode: "join" });
   }
 
+  function handleDeleted(id) {
+    const remaining = households.filter((household) => household.id !== id);
+    setHouseholds(remaining);
+    setHouseholdId(remaining.length ? String(remaining[0].id) : "");
+    setDeleting(null);
+    setReloadCount((count) => count + 1);
+  }
+
   const value = {
     households,
     householdId,
@@ -81,6 +91,10 @@ export function HouseholdsProvider({ children }) {
       setSetupOpen(true);
     },
     openJoin: user.isGuest ? null : openJoin,
+    openDelete: (household) => {
+      opener.current = document.activeElement;
+      setDeleting(household);
+    },
     openShare: user.isGuest ? null : (household) => {
       opener.current = document.activeElement;
       setSharing({ mode: "share", household });
@@ -105,6 +119,10 @@ export function HouseholdsProvider({ children }) {
           onJoined={handleCreated}
           opener={opener}
         />
+      )}
+      {deleting && (
+        <DeleteHouseholdDialog household={deleting} opener={opener}
+          onClose={() => setDeleting(null)} onDeleted={handleDeleted} />
       )}
     </HouseholdsContext.Provider>
   );

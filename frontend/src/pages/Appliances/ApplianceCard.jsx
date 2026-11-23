@@ -40,13 +40,13 @@ export default function ApplianceCard({ appliance, onEdit, onDelete, busy }) {
           </Button>
           <Button
             disabled={busy}
-            variant="ghost"
-            size="icon-sm"
+            variant="destructive"
+            size="sm"
             aria-label={`Delete ${appliance.name}`}
-            className="hover:text-danger"
             onClick={() => onDelete(appliance)}
           >
             <Trash2 />
+            Delete
           </Button>
         </div>
       </div>

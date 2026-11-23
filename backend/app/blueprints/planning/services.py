@@ -6,6 +6,8 @@ from sqlalchemy import select
 from .calculations import build_plan
 from .validation import STYLES, validate_request
 from ..appliances.estimates import estimate_period
+from ..appliances.services import apply_appliance_values
+from ...errors import ValidationError
 from ...extensions import db
 from ...models import Appliance, BudgetPlan, Household
 
@@ -17,9 +19,11 @@ def get_household(household_id, *, lock=False):
     return db.one_or_404(query)
 
 
-def get_appliances(household_id):
-    return db.session.scalars(select(Appliance).where(
-        Appliance.household_id == household_id).order_by(Appliance.id)).all()
+def get_appliances(household_id, *, lock=False):
+    query = select(Appliance).where(Appliance.household_id == household_id).order_by(Appliance.id)
+    if lock:
+        query = query.with_for_update()
+    return db.session.scalars(query).all()
 
 
 def fingerprint(household, appliances):
@@ -67,6 +71,25 @@ def generate_plan(household_id, data):
     household = get_household(household_id)
     settings = validate_request(data, household)
     return build_plan(get_appliances(household_id), **settings)
+
+
+def update_plan_hours(household_id, appliance_id, data):
+    household = get_household(household_id, lock=True)
+    settings = validate_request(data, household)
+    adjustments = settings["adjustments"]
+    if appliance_id not in adjustments:
+        raise ValidationError("Provide the hours for the selected appliance.")
+    appliances = get_appliances(household_id, lock=True)
+    appliance = next((item for item in appliances if item.id == appliance_id), None)
+    if appliance is None:
+        raise ValidationError("The selected appliance does not belong to this household.")
+
+    with db.session.begin_nested():
+        apply_appliance_values(household_id, {"hours_per_day": adjustments[appliance_id]}, appliance)
+        plan = build_plan(appliances, **settings)
+        state = planner_state(household_id, settings["month"])
+    db.session.commit()
+    return {"plan": plan, "preview": state["preview"], "saved_plan": state["saved_plan"]}
 
 
 def save_plan(household_id, data):

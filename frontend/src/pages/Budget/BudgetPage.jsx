@@ -37,7 +37,7 @@ export default function BudgetPage() {
       .getBudgetPlanner(householdId, { signal: controller.signal })
       .then((data) => {
         setPlanner(data);
-        showPlan(data.savedPlan ? data.savedPlan.plan : data.preview);
+        showPlan(data.savedPlan && !data.savedPlan.isStale ? data.savedPlan.plan : data.preview);
       })
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
@@ -58,7 +58,7 @@ export default function BudgetPage() {
   // Send every flexible row's hours: the server regenerates any row left out.
   function currentAdjustments(changedId, changedHours) {
     return plan.items
-      .filter((item) => !item.isMustHave)
+      .filter((item) => !item.isMustHave || item.id === changedId)
       .map((item) => ({
         id: item.id,
         hours: item.id === changedId ? changedHours : item.hoursPerDay,
@@ -92,13 +92,14 @@ export default function BudgetPage() {
 
   function handleHoursChange(id, hours) {
     run(async () => {
-      const newPlan = await api.generateBudgetPlan(householdId, {
+      const updated = await api.updateBudgetHours(householdId, id, {
         month: plan.month,
         budget: plan.budget,
         style: plan.style,
         adjustments: currentAdjustments(id, hours),
       });
-      setPlan(newPlan);
+      setPlan(updated.plan);
+      setPlanner((current) => ({ ...current, preview: updated.preview, savedPlan: updated.savedPlan }));
     });
   }
 
@@ -218,8 +219,7 @@ function SavedPlanStatus({ savedPlan, justSaved }) {
   if (savedPlan.isStale) {
     return (
       <p role="status" className="text-warning">
-        Your appliances or household changed since this plan was saved. Generate and save
-        again to update it.
+        Your saved plan needs updating. The planner uses your current appliance hours.
       </p>
     );
   }

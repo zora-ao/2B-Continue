@@ -3,7 +3,12 @@ import Sidebar from "@/components/Sidebar";
 import LoginCheck from "@/components/LoginCheck";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { HouseholdsProvider } from "@/hooks/useHouseholds";
+import { HouseholdsProvider, useHouseholds } from "@/hooks/useHouseholds";
+
+function HouseholdOutlet() {
+  const { householdId } = useHouseholds();
+  return <Outlet key={householdId} />;
+}
 
 // Layout for every app page. Everyone has a session (a guest at least) once the check is done.
 export default function AppShell() {
@@ -36,7 +41,7 @@ export default function AppShell() {
         <Sidebar />
 
         <main id="main" tabIndex={-1} className="min-w-0 flex-1 p-4 outline-none md:p-8">
-          <Outlet />
+          <HouseholdOutlet />
         </main>
       </div>
     </HouseholdsProvider>

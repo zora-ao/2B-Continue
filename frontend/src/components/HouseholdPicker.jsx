@@ -1,4 +1,4 @@
-import { Plus, Share2 } from "lucide-react";
+import { Plus, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,7 +10,7 @@ import {
 import { useHouseholds } from "@/hooks/useHouseholds";
 
 export default function HouseholdPicker({ households, value, onChange, disabled }) {
-  const { openSetup, openShare, openJoin } = useHouseholds();
+  const { openSetup, openShare, openJoin, openDelete } = useHouseholds();
   const selected = households.find((household) => String(household.id) === value);
 
   // With no household yet, the page shows its own "Set up household" prompt instead.
@@ -49,6 +49,12 @@ export default function HouseholdPicker({ households, value, onChange, disabled 
       )}
       {openJoin && (
         <Button variant="outline" size="sm" onClick={openJoin} disabled={disabled}>Join with PIN</Button>
+      )}
+      {selected?.is_owner && (
+        <Button variant="destructive" size="sm" onClick={() => openDelete(selected)} disabled={disabled}>
+          <Trash2 />
+          Delete household
+        </Button>
       )}
     </div>
   );
