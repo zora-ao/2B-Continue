@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Bell, LayoutDashboard, Plug, Sun, Wallet, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const LINKS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -27,11 +28,12 @@ export default function Sidebar() {
           to={to}
           end={to === "/"}
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition ${
+            cn(
+              "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition",
               isActive
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`
+                : "text-muted-foreground hover:text-foreground",
+            )
           }
         >
           <LinkIcon className="size-5" />

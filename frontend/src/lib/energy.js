@@ -30,10 +30,14 @@ export function totalDailyKwh(appliances) {
   return total;
 }
 
+// 3.6000000004 → "3.6", 1234.56 → "1,234.6"
+export function formatNumber(value) {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 1 });
+}
+
 // 3.6000000004 → "3.6 kWh", 1234.56 → "1,234.6 kWh"
 export function formatKwh(kwh) {
-  const text = kwh.toLocaleString("en-US", { maximumFractionDigits: 1 });
-  return `${text} kWh`;
+  return `${formatNumber(kwh)} kWh`;
 }
 
 // 1296.0000001 → "₱1,296"

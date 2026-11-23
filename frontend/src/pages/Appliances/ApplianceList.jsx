@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatKwh, totalDailyKwh } from "@/lib/energy";
-import ApplianceCard from "./ApplianceCard.jsx";
+import ApplianceCard from "./ApplianceCard";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -46,11 +46,7 @@ export default function ApplianceList({ appliances, onEdit, onDelete, busy }) {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Total ≈{" "}
-          <span className="font-heading font-semibold text-foreground">
-            {formatKwh(totalDailyKwh(appliances))}
-          </span>{" "}
-          / day
+          Total ≈ <strong className="text-foreground">{formatKwh(totalDailyKwh(appliances))}</strong> / day
         </p>
       </div>
 

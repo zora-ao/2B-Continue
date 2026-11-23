@@ -1,6 +1,6 @@
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
-import HouseholdSetup from "./HouseholdSetup.jsx";
+import HouseholdSetup from "./HouseholdSetup";
 import { useEffect, useState } from "react";
 import {
   AlertDialog,
@@ -12,8 +12,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ApplianceForm from "./ApplianceForm.jsx";
-import ApplianceList from "./ApplianceList.jsx";
+import PageHeader from "@/components/PageHeader";
+import ApplianceForm from "./ApplianceForm";
+import ApplianceList from "./ApplianceList";
 
 export default function AppliancesPage() {
   const [households, setHouseholds] = useState([]);
@@ -95,12 +96,10 @@ export default function AppliancesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold">Appliances</h1>
-        <p className="text-muted-foreground">
-          Type in your appliances to see how much each one costs.
-        </p>
-      </header>
+      <PageHeader
+        title="Appliances"
+        subtitle="Type in your appliances to see how much each one costs."
+      />
 
       {error && (
         <div role="alert" className="rounded-lg border border-danger p-4 text-danger">
