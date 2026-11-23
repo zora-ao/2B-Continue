@@ -34,6 +34,8 @@ def create_app(test_config=None) -> Flask:
     secret_key = os.getenv("SECRET_KEY")
     if not secret_key:
         raise ValueError("SECRET_KEY environment variable is not set")
+    if len(secret_key) < 32:
+        raise ValueError("SECRET_KEY must be at least 32 characters (it signs login tokens)")
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

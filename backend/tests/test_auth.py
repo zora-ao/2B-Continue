@@ -86,6 +86,13 @@ def test_cookie_secure_outside_debug(monkeypatch):
     assert create_app().config["JWT_COOKIE_SECURE"] is True
 
 
+def test_short_secret_key_rejected(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "short-key")
+    monkeypatch.setattr("app.load_dotenv", lambda *args, **kwargs: None)
+    with pytest.raises(ValueError):
+        create_app()
+
+
 def test_secret_key_required(monkeypatch):
     monkeypatch.delenv("SECRET_KEY")
     monkeypatch.setattr("app.load_dotenv", lambda *args, **kwargs: None)
