@@ -29,12 +29,10 @@ export function AuthProvider({ children }) {
     user,
     login: async (credentials) => setUser(await api.login(credentials)),
     register: async (account) => setUser(await api.register(account)),
+    // Throws if the server can't be reached, so the caller can say so instead of pretending.
     logout: async () => {
-      try {
-        await api.logout();
-      } finally {
-        setUser(null);
-      }
+      await api.logout();
+      setUser(null);
     },
   };
 

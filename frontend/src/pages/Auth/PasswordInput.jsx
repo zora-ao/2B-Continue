@@ -11,7 +11,6 @@ export default function PasswordInput(props) {
       <Input {...props} type={visible ? "text" : "password"} className="pr-11" />
       <button
         type="button"
-        aria-pressed={visible}
         aria-label={visible ? "Hide password" : "Show password"}
         onClick={() => setVisible((value) => !value)}
         className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"

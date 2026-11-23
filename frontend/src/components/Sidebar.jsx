@@ -38,23 +38,36 @@ function NavLinks({ onNavigate }) {
 function UserMenu() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [error, setError] = useState("");
 
   async function handleLogout() {
-    await logout();
-    navigate("/login", { replace: true });
+    setError("");
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch {
+      setError("Couldn't log out. Check your connection and try again.");
+    }
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-sidebar-border pt-4">
-      <p className="min-w-0 truncate text-sm font-medium">{user?.name}</p>
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <LogOut className="size-4" />
-        Log out
-      </button>
+    <div className="flex flex-col gap-2 border-t border-sidebar-border pt-4">
+      {error && (
+        <p role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-medium">{user?.name}</p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <LogOut className="size-4" />
+          Log out
+        </button>
+      </div>
     </div>
   );
 }

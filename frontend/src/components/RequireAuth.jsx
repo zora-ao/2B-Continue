@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
-import Spinner from "@/components/Spinner";
+import LoginCheck from "@/components/LoginCheck";
 import { useAuth } from "@/hooks/useAuth";
 
 // Layout for every logged-in page: waits for the login check, then shows the app shell.
@@ -8,14 +8,7 @@ export default function RequireAuth() {
   const { user } = useAuth();
   const location = useLocation();
 
-  if (user === undefined) {
-    return (
-      <p role="status" className="flex min-h-screen items-center justify-center gap-3 text-muted-foreground">
-        <Spinner label="Checking your login" />
-        Checking your login...
-      </p>
-    );
-  }
+  if (user === undefined) return <LoginCheck />;
   if (user === null) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }

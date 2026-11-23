@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
+import LoginCheck from "@/components/LoginCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,20 +12,26 @@ export default function LoginPage() {
   const { user, login } = useAuth();
   const location = useLocation();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null); // { message, field }
 
+  // The fields were disabled while sending, so focus is lost; put it where the fix is.
+  useEffect(() => {
+    if (error) document.getElementById(error.field)?.focus();
+  }, [error]);
+
+  if (user === undefined) return <LoginCheck />;
   // Once logged in (or already logged in), go back to the page that sent us here.
-  if (user) return <Navigate to={location.state?.from?.pathname ?? "/"} replace />;
+  if (user) return <Navigate to={location.state?.from ?? "/"} replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       await login({ email: form.get("email"), password: form.get("password") });
     } catch (err) {
-      setError(err.message);
+      setError({ message: err.message, field: "current-password" });
       setBusy(false);
     }
   }
@@ -70,7 +77,7 @@ export default function LoginPage() {
 
           {error && (
             <p role="alert" className="text-sm text-danger">
-              {error}
+              {error.message}
             </p>
           )}
 

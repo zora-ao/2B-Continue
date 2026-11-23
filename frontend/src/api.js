@@ -21,15 +21,23 @@ function send(path, options) {
 }
 
 // The access login lasts 15 minutes. Parallel 401s share one refresh.
+// Resolves "ok", "conflict" (another tab refreshed a moment ago), or false (the login is over).
 let refreshing = null;
 function refreshLogin() {
   refreshing ??= fetch("/api/auth/refresh", {
     method: "POST",
     headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },
   })
-    // 409: another tab refreshed a moment ago, so its new cookies are already set.
-    .then((response) => response.ok || response.status === 409)
+    .then((response) => {
+      if (response.ok) return "ok";
+      return response.status === 409 ? "conflict" : false;
+    })
     .catch(() => false)
+    .then((result) => {
+      // Fired once per failed refresh, not once per waiting request.
+      if (!result) window.dispatchEvent(new Event("auth:expired"));
+      return result;
+    })
     .finally(() => {
       refreshing = null;
     });
@@ -38,9 +46,12 @@ function refreshLogin() {
 
 async function request(path, options = {}) {
   let response = await send(path, options);
-  if (response.status === 401 && !NO_REFRESH_PATHS.has(path)) {
-    if (await refreshLogin()) response = await send(path, options);
-    if (response.status === 401) window.dispatchEvent(new Event("auth:expired"));
+  // After a "conflict" the other tab's new cookies may land a moment later, so allow one more try.
+  for (let attempt = 0; attempt < 2 && response.status === 401 && !NO_REFRESH_PATHS.has(path); attempt++) {
+    const result = await refreshLogin();
+    if (!result) break;
+    response = await send(path, options);
+    if (result === "ok") break;
   }
   if (response.status === 204) {
     return null; // e.g. after DELETE: success, nothing to read

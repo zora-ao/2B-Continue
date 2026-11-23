@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import LoginCheck from "@/components/LoginCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,16 @@ import PasswordInput from "./PasswordInput";
 export default function RegisterPage() {
   const { user, register } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const location = useLocation();
+  const [error, setError] = useState(null); // { message, field }
   const justRegistered = useRef(false);
+
+  // The fields were disabled while sending, so focus is lost; put it where the fix is.
+  useEffect(() => {
+    if (error) document.getElementById(error.field)?.focus();
+  }, [error]);
+
+  if (user === undefined) return <LoginCheck />;
 
   // Once logged in, leave this page. New accounts have no household yet,
   // so they go to Appliances, which walks them through setting one up.
@@ -21,13 +30,14 @@ export default function RegisterPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusy(true);
-    setError("");
+    setError(null);
     justRegistered.current = true;
     try {
       await register({ name: form.get("name"), email: form.get("email"), password: form.get("password") });
     } catch (err) {
       justRegistered.current = false;
-      setError(err.message);
+      // 409 means the email is taken; anything else is most likely about the password.
+      setError({ message: err.message, field: err.status === 409 ? "email" : "new-password" });
       setBusy(false);
     }
   }
@@ -39,7 +49,7 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link to="/login" className="text-primary underline">
+          <Link to="/login" state={location.state} className="text-primary underline">
             Log in
           </Link>
         </>
@@ -82,7 +92,7 @@ export default function RegisterPage() {
 
           {error && (
             <p role="alert" className="text-sm text-danger">
-              {error}
+              {error.message}
             </p>
           )}
 
