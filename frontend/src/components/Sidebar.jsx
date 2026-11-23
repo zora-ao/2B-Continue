@@ -123,8 +123,10 @@ function UserMenu({ collapsed = false }) {
           <LogOut className="size-5" />
         </button>
         {error && (
-          <p role="alert" className="text-center text-xs break-words text-danger">
-            {error}
+          // The strip is too narrow for the full message: show a short one, keep the rest for hover and screen readers.
+          <p role="alert" title={error} className="text-center text-xs text-danger">
+            <span aria-hidden="true">Log out failed</span>
+            <span className="sr-only">{error}</span>
           </p>
         )}
       </div>
@@ -185,7 +187,7 @@ export default function Sidebar() {
       {/* Desktop: full sidebar, or an icons-only strip when collapsed */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 flex-col gap-1.5 overflow-hidden border-r border-sidebar-border bg-sidebar py-7 transition-[width] duration-200 motion-reduce:transition-none md:flex",
+          "sticky top-0 hidden h-screen shrink-0 flex-col gap-1.5 overflow-x-hidden overflow-y-auto border-r border-sidebar-border bg-sidebar py-7 transition-[width] duration-200 motion-reduce:transition-none md:flex",
           collapsed ? "w-[72px] px-3" : "w-[260px] px-5",
         )}
       >
