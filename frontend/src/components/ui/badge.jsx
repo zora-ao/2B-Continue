@@ -18,7 +18,7 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        // EnergyWise status tones (match the Figma "Badge" component)
+        // Kuryenta status tones (match the Figma "Badge" component)
         success: "bg-green-soft text-green font-semibold uppercase tracking-wide",
         warning: "bg-warning-soft text-warning font-semibold uppercase tracking-wide",
         danger: "bg-danger-soft text-danger font-semibold uppercase tracking-wide",

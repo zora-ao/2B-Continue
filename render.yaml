@@ -1,4 +1,4 @@
-# Render blueprint for the EnergyWise Flask API.
+# Render blueprint for the Kuryenta Flask API (service name kept so Render keeps the same service).
 # In Render: New > Blueprint > pick this repo. It asks for DATABASE_URL once.
 services:
   - type: web
@@ -19,3 +19,6 @@ services:
       # Supabase > Connect: Render can't reach the direct (IPv6) address.
       - key: DATABASE_URL
         sync: false
+      # Signs the login session cookie. Render generates a random value once.
+      - key: SECRET_KEY
+        generateValue: true

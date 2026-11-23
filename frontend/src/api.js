@@ -1,20 +1,77 @@
 // The API uses snake_case; the app uses camelCase. Only this file converts between them.
-async function request(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// These answer 401 for a wrong password or a dead login; refreshing would not help.
+const NO_REFRESH_PATHS = new Set(["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout", "/auth/guest"]);
+
+// The login tokens live in HttpOnly cookies. Only the CSRF cookies are readable, by design.
+function readCookie(name) {
+  const row = document.cookie.split("; ").find((item) => item.startsWith(`${name}=`));
+  return row ? decodeURIComponent(row.slice(name.length + 1)) : "";
+}
+
+function send(path, options) {
+  // FormData (photo uploads) must let the browser set its own multipart header.
+  const jsonHeader = options.body instanceof FormData ? {} : { "Content-Type": "application/json" };
+  const method = (options.method || "GET").toUpperCase();
+  const csrfHeader = WRITE_METHODS.has(method) ? { "X-CSRF-TOKEN": readCookie("csrf_access_token") } : {};
+  return fetch(`/api${path}`, {
     ...options,
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: { ...jsonHeader, ...csrfHeader, ...options.headers },
   });
+}
+
+// The access login lasts 15 minutes. Parallel 401s share one refresh.
+// Resolves "ok", "conflict" (another tab refreshed a moment ago), false (the login is over),
+// or "error" (server or network trouble: the login may still be fine, so keep it).
+let refreshing = null;
+function refreshLogin() {
+  refreshing ??= fetch("/api/auth/refresh", {
+    method: "POST",
+    headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },
+  })
+    .then((response) => {
+      if (response.ok) return "ok";
+      if (response.status === 409) return "conflict";
+      return response.status === 401 ? false : "error";
+    })
+    .catch(() => "error")
+    .then((result) => {
+      // Fired once per ended login, not once per waiting request.
+      if (result === false) window.dispatchEvent(new Event("auth:expired"));
+      return result;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+async function request(path, options = {}) {
+  let response = await send(path, options);
+  // After a "conflict" the other tab's new cookies may land a moment later, so allow one more try.
+  for (let attempt = 0; attempt < 2 && response.status === 401 && !NO_REFRESH_PATHS.has(path); attempt++) {
+    const result = await refreshLogin();
+    if (result !== "ok" && result !== "conflict") break;
+    response = await send(path, options);
+    if (result === "ok") break;
+  }
   if (response.status === 204) {
     return null; // e.g. after DELETE: success, nothing to read
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(data?.error || `Request failed: ${response.status}`);
+    const error = new Error(data?.error || `Request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   if (!data) {
     throw new Error("The server returned an invalid response.");
   }
   return data;
+}
+
+function fromUser(user) {
+  return { id: user.id, name: user.name, email: user.email, isGuest: user.is_guest };
 }
 
 function toApi(appliance) {
@@ -229,6 +286,18 @@ function fromSolarProfile(profile) {
   };
 }
 
+const scanSessionPath = (code) => `/scan-sessions/${encodeURIComponent(code)}`;
+
+function photoForm(photo) {
+  const form = new FormData();
+  form.append("photo", photo, "label.jpg");
+  return form;
+}
+
+function fromScanSession(session) {
+  return { code: session.code, expiresAt: session.expires_at };
+}
+
 export const api = {
   health: () => request("/health"),
   listHouseholds: () => request("/households"),
@@ -344,4 +413,27 @@ export const api = {
       method: "PATCH", body: JSON.stringify(changes),
     }));
   },
+
+  // Scanning a rating label: the server's vision model returns { name, type, watts }.
+  readLabel: (photo) => request("/scans/read", { method: "POST", body: photoForm(photo) }),
+  startScanSession: async () => fromScanSession(await request("/scan-sessions", { method: "POST", body: "{}" })),
+  getScanSession: (code, options) => request(scanSessionPath(code), options),
+  sendScanPhoto: (code, photo) => request(`${scanSessionPath(code)}/photo`, {
+    method: "POST", body: photoForm(photo),
+  }),
+
+  // Login: the server keeps the tokens in cookies and returns only { user }.
+  me: async (options) => fromUser((await request("/auth/me", options)).user),
+  // A guest has no name, email or password. Registering later keeps their data.
+  guest: async () => fromUser((await request("/auth/guest", { method: "POST", body: "{}" })).user),
+  login: async (credentials) => fromUser((await request("/auth/login", {
+    method: "POST", body: JSON.stringify(credentials),
+  })).user),
+  register: async (account) => fromUser((await request("/auth/register", {
+    method: "POST", body: JSON.stringify(account),
+  })).user),
+  // Logout reads the refresh token, so it needs the refresh CSRF value.
+  logout: () => request("/auth/logout", {
+    method: "POST", headers: { "X-CSRF-TOKEN": readCookie("csrf_refresh_token") },
+  }),
 };

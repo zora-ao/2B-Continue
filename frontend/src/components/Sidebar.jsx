@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import { Bell, LayoutDashboard, Menu, Plug, Sun, Wallet, X, Zap } from "lucide-react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Bell, LayoutDashboard, LogOut, Menu, Plug, Sun, Wallet, X } from "lucide-react";
+import Logo from "@/components/Logo";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -10,17 +12,6 @@ const LINKS = [
   { to: "/solar", label: "Solar", icon: Sun },
   { to: "/alerts", label: "Alerts", icon: Bell },
 ];
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Zap className="size-[18px]" />
-      </div>
-      <span className="font-heading text-xl font-medium">EnergyWise</span>
-    </div>
-  );
-}
 
 function NavLinks({ onNavigate }) {
   return LINKS.map(({ to, label, icon: LinkIcon }) => (
@@ -44,6 +35,69 @@ function NavLinks({ onNavigate }) {
   ));
 }
 
+const AUTH_LINK =
+  "flex flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
+
+// Guests can log in or create an account from here; their data comes with them.
+function GuestMenu() {
+  const location = useLocation();
+  const from = { from: location };
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
+      <div>
+        <p className="text-sm font-medium">Guest</p>
+        <p className="text-xs text-muted-foreground">Create an account to keep your data.</p>
+      </div>
+      <div className="flex gap-2">
+        <Link to="/login" state={from} className={`${AUTH_LINK} border border-border hover:bg-muted`}>
+          Log in
+        </Link>
+        <Link to="/register" state={from} className={`${AUTH_LINK} bg-primary text-primary-foreground hover:bg-primary/90`}>
+          Create account
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function UserMenu() {
+  const { user, logout } = useAuth();
+  const [error, setError] = useState("");
+
+  if (user.isGuest) return <GuestMenu />;
+
+  async function handleLogout() {
+    setError("");
+    try {
+      await logout();
+    } catch {
+      setError("Couldn't log out. Check your connection and try again.");
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-sidebar-border pt-4">
+      {error && (
+        <p role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-medium">{user.name}</p>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <LogOut className="size-4" />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
 
@@ -65,18 +119,24 @@ export default function Sidebar() {
           </button>
         </div>
         {open && (
-          <nav id="mobile-nav" className="flex flex-col gap-1.5 px-4 pb-4">
+          <nav id="mobile-nav" aria-label="Main" className="flex flex-col gap-1.5 px-4 pb-4">
             <NavLinks onNavigate={() => setOpen(false)} />
+            <UserMenu />
           </nav>
         )}
       </header>
 
       {/* Desktop: full sidebar */}
-      <aside className="hidden w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7 md:flex">
         <div className="mb-6">
           <Logo />
         </div>
-        <NavLinks />
+        <nav aria-label="Main" className="flex flex-col gap-1.5">
+          <NavLinks />
+        </nav>
+        <div className="mt-auto">
+          <UserMenu />
+        </div>
       </aside>
     </>
   );

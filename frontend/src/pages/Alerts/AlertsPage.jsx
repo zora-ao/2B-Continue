@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Check, CircleCheck } from "lucide-react";
 import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
+import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
@@ -143,13 +143,7 @@ export default function AlertsPage() {
       {isLoading && <p role="status">Loading your alerts...</p>}
 
       {!isLoading && !households.error && households.households.length === 0 && (
-        <p className="text-muted-foreground">
-          No household yet. Set one up on the{" "}
-          <Link to="/appliances" className="text-primary underline">
-            Appliances page
-          </Link>{" "}
-          first.
-        </p>
+        <NoHousehold />
       )}
 
       {alerts && settings && !isLoading && (
