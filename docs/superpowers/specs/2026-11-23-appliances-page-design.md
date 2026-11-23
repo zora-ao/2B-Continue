@@ -60,7 +60,7 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
   { id, name, type, watts, hoursPerDay, quantity, isMustHave }
   ```
   `type` is one of: aircon, refrigerator, tv, fan, lights, other (drives the card icon).
-- **Calculations** (in `src/utils/energy.js`, plain functions):
+- **Calculations** (in `src/lib/energy.js`, plain functions):
   - kWh per day = watts × quantity × hoursPerDay ÷ 1000
   - kWh per month = kWh per day × 30
   - cost per month = kWh per month × rate
@@ -72,7 +72,9 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
   ├── App.jsx                 routes + sidebar layout
   ├── api.js                  appliance functions (localStorage for now)
   ├── index.css               Tailwind import + theme tokens
-  ├── lib/utils.js            shadcn's cn() helper
+  ├── lib/
+  │   ├── utils.js            shadcn's cn() helper
+  │   └── energy.js           kWh and ₱ math shared by every page
   ├── components/
   │   ├── Sidebar.jsx
   │   └── ui/                 shadcn components: button, card, badge, input,
@@ -82,10 +84,9 @@ Every other feature (budget plan, bill estimate, alerts, solar sizing) starts fr
   │   │   ├── AppliancesPage.jsx
   │   │   ├── ApplianceForm.jsx
   │   │   ├── ApplianceList.jsx
-  │   │   └── ApplianceCard.jsx
+  │   │   ├── ApplianceCard.jsx
+  │   │   └── applianceForm.js    form checks + appliance type list (page-only)
   │   └── Placeholder.jsx     "Coming soon" page for the other sidebar links
-  └── utils/
-      └── energy.js
   ```
 - **Layout (desktop):** sidebar (260px) | main area with header "Appliances" + subtitle; below it the form card (~400px) on the left and the list on the right, matching the Figma frame. The left panel shows the form in place of the camera preview for now; a disabled "Scan appliance (coming soon)" button marks where the camera goes.
 - **Edit flow:** clicking Edit on a card loads it into the same form (title changes to "Edit appliance", button to "Save changes", plus Cancel).
