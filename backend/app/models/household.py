@@ -22,6 +22,7 @@ class Household(db.Model):
 
     id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
     name: Mapped[str] = mapped_column(db.String(120), nullable=False)
+    user_id: Mapped[int | None] = mapped_column(db.Integer, db.ForeignKey("users.id"), index=True)
     location: Mapped[str | None] = mapped_column(db.String(255))
     electricity_rate: Mapped[Decimal] = mapped_column(db.Numeric(12, 4), nullable=False)
     monthly_budget: Mapped[Decimal] = mapped_column(db.Numeric(12, 2), nullable=False)

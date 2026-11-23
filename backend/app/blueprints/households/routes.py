@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
-from flask import jsonify
+from flask import g, jsonify
 from sqlalchemy import select
 
 from . import households_bp
@@ -17,7 +17,8 @@ def serialize(household):
 
 @households_bp.get("")
 def list_households():
-    households = db.session.scalars(select(Household).order_by(Household.id)).all()
+    households = db.session.scalars(select(Household).where(Household.user_id == g.user.id)
+                                    .order_by(Household.id)).all()
     return jsonify(items=[serialize(h) for h in households])
 
 
@@ -42,7 +43,7 @@ def create_household():
         except (InvalidOperation, ValueError):
             raise ValidationError(f"Invalid {field}; use up to {scale} decimal places.") from None
         values[field] = value
-    household = Household(**values)
+    household = Household(**values, user_id=g.user.id)
     db.session.add(household)
     db.session.commit()
     return jsonify(item=serialize(household)), 201
