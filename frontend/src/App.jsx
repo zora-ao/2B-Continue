@@ -1,54 +1,21 @@
-import { useEffect, useState } from "react";
-import { api } from "./api.js";
+import { Route, Routes } from "react-router-dom";
+import Sidebar from "./components/Sidebar.jsx";
+import Placeholder from "./pages/Placeholder.jsx";
 
 export default function App() {
-  const [status, setStatus] = useState("checking…");
-  const [items, setItems] = useState([]);
-  const [text, setText] = useState("");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api.health()
-      .then((d) => setStatus(d.status))
-      .catch(() => setStatus("offline"));
-    api.listItems().then(setItems).catch((e) => setError(e.message));
-  }, []);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    try {
-      const item = await api.createItem(text);
-      setItems((prev) => [...prev, item]);
-      setText("");
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   return (
-    <main className="container">
-      <h1>2B Continue</h1>
-      <p>
-        Backend status:{" "}
-        <span className={status === "ok" ? "ok" : "bad"}>{status}</span>
-      </p>
+    <div className="flex min-h-screen">
+      <Sidebar />
 
-      <form onSubmit={handleSubmit}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Add an item"
-        />
-        <button type="submit">Add</button>
-      </form>
-      {error && <p className="bad">{error}</p>}
-
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>{item.text}</li>
-        ))}
-      </ul>
-    </main>
+      <main className="min-w-0 flex-1 p-8">
+        <Routes>
+          <Route path="/" element={<Placeholder title="Dashboard" />} />
+          <Route path="/budget" element={<Placeholder title="Budget Planner" />} />
+          <Route path="/appliances" element={<Placeholder title="Appliances" />} />
+          <Route path="/solar" element={<Placeholder title="Solar" />} />
+          <Route path="/alerts" element={<Placeholder title="Alerts" />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
