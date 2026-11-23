@@ -4,9 +4,9 @@
 
 **Goal:** Build the EnergyWise Appliances page where a user types in appliances (watts, hours/day, quantity, must-have) and sees per-appliance monthly kWh and ₱ cost plus a daily total, saved in the browser.
 
-**Architecture:** React pages under `src/pages/`, shared UI in `src/components/`, all math and form parsing as plain tested functions in `src/utils/`, and all storage behind async functions in `src/api.js` (localStorage now, Flask later). Tailwind v4 provides styling with the Figma tokens as theme colors.
+**Architecture:** React pages under `src/pages/`, shared UI in `src/components/`, shared math as plain tested functions in `src/lib/energy.js`, form parsing in `src/pages/Appliances/applianceForm.js`, and all storage behind async functions in `src/api.js` (localStorage now, Flask later). Tailwind v4 provides styling with the Figma tokens as theme colors.
 
-**Tech Stack:** React 19, Vite 7, Tailwind CSS v4 (`@tailwindcss/vite`), react-router-dom 7, Vitest + jsdom (tests for `utils/` and `api.js`).
+**Tech Stack:** React 19, Vite 7, Tailwind CSS v4 (`@tailwindcss/vite`), react-router-dom 7, Vitest + jsdom (tests for `lib/energy.js`, `applianceForm.js` and `api.js`).
 
 **Spec:** `docs/superpowers/specs/2026-11-23-appliances-page-design.md`
 
@@ -21,6 +21,7 @@
 - Appliance shape: `{ id, name, type, watts, hoursPerDay, quantity, isMustHave }`; `type` ∈ `aircon | refrigerator | tv | fan | lights | other`.
 - Validation: name required; watts > 0; hours per day 0–24; quantity ≥ 1.
 - localStorage key: `energywise.appliances`.
+- **File locations (amended in Task 2):** shared energy math lives in `src/lib/energy.js` (next to shadcn's `lib/utils.js`, so there is one helpers folder, not `src/utils/`); `APPLIANCE_TYPES`, `EMPTY_FORM`, `parseApplianceForm`, `applianceToForm` live in `src/pages/Appliances/applianceForm.js` because only the Appliances page uses them.
 - **UI components (amended after Task 1): use shadcn from `@/components/ui/*`** — `Button` (use `size="lg"` for page buttons), `Card`/`CardHeader`/`CardTitle`/`CardContent`, `Badge` (EnergyWise variants `success | warning | danger | solar`), `Input`, `Label`, `Select`, `Checkbox`, `AlertDialog`. Icons from `lucide-react`. Theme classes: `bg-background`, `bg-card`, `bg-secondary`, `border-border`, `text-foreground`, `text-muted-foreground`, `bg-primary`/`text-primary-foreground`, plus `green(-soft)`, `yellow(-soft)`, `warning(-soft)`, `danger(-soft)`, `info`; fonts `font-sans` (DM Sans) and `font-heading` (Space Grotesk). Where Tasks 4–5 below say `Card`, `Badge tone=…`, `Button variant=…` or `Icon`, use these instead.
 
 ## Review Focus
@@ -82,9 +83,9 @@ git commit -m "feat(frontend): add Tailwind theme, router, and sidebar layout"
 ### Task 2: Energy math, formatting, and form parsing (tested)
 
 **Files:**
-- Create: `frontend/src/utils/energy.js`
-- Create: `frontend/src/utils/applianceForm.js`
-- Test: `frontend/src/utils/energy.test.js`, `frontend/src/utils/applianceForm.test.js`
+- Create: `frontend/src/lib/energy.js`
+- Create: `frontend/src/pages/Appliances/applianceForm.js`
+- Test: `frontend/src/lib/energy.test.js`, `frontend/src/pages/Appliances/applianceForm.test.js`
 
 **Interfaces:**
 - Produces (`energy.js`):
@@ -171,7 +172,7 @@ Expected: all tests PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add frontend/src/utils
+git add frontend/src/lib frontend/src/pages/Appliances
 git commit -m "feat(frontend): add energy math and appliance form parsing"
 ```
 

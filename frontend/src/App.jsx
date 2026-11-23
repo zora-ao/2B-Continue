@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Sidebar from "./components/Sidebar.jsx";
+import AppliancesPage from "./pages/Appliances/AppliancesPage.jsx";
 import Placeholder from "./pages/Placeholder.jsx";
 
 export default function App() {
@@ -11,7 +12,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Placeholder title="Dashboard" />} />
           <Route path="/budget" element={<Placeholder title="Budget Planner" />} />
-          <Route path="/appliances" element={<Placeholder title="Appliances" />} />
+          <Route path="/appliances" element={<AppliancesPage />} />
           <Route path="/solar" element={<Placeholder title="Solar" />} />
           <Route path="/alerts" element={<Placeholder title="Alerts" />} />
         </Routes>
