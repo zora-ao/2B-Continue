@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
+import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
@@ -25,8 +25,7 @@ export default function SolarPage() {
   const [error, setError] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
 
-  // Location and budget inputs: edited locally, saved to the profile, then recommendations refresh.
-  const [locationKey, setLocationKey] = useState("");
+  // The budget input is edited locally, saved to the profile, then recommendations refresh.
   const [budgetText, setBudgetText] = useState("");
   const [updatingRecommendations, setUpdatingRecommendations] = useState(false);
   const syncedHousehold = useRef(null);
@@ -48,10 +47,9 @@ export default function SolarPage() {
       .getSolar(householdId, weekOf, { signal: controller.signal })
       .then((data) => {
         setSolar(data);
-        // Fill the inputs once per household, so a week change never overwrites typing.
+        // Fill the budget once per household, so a week change never overwrites typing.
         if (syncedHousehold.current !== householdId) {
           syncedHousehold.current = householdId;
-          setLocationKey(data.profile.locationKey);
           setBudgetText(formatBudgetInput(data.profile.installBudget));
         }
       })
@@ -80,11 +78,11 @@ export default function SolarPage() {
     setUpdatingRecommendations(true);
     setError("");
     try {
-      await api.saveSolarProfile(householdId, changes);
+      const profile = await api.saveSolarProfile(householdId, changes);
       const recommendations = await api.getSolarRecommendations(householdId);
       // Ignore stale responses when the user changed the inputs again meanwhile.
       if (saveId === latestProfileSave.current) {
-        setSolar((current) => current && { ...current, recommendations });
+        setSolar((current) => current && { ...current, profile, recommendations });
       }
     } catch (err) {
       setError(err.message);
@@ -93,9 +91,8 @@ export default function SolarPage() {
     }
   }
 
-  function handleLocationChange(key) {
-    setLocationKey(key);
-    saveProfileAndRefresh({ locationKey: key });
+  function handleLocationChange(place) {
+    saveProfileAndRefresh({ location: place });
   }
 
   function handleBudgetChange(text) {
@@ -197,15 +194,7 @@ export default function SolarPage() {
 
       {isLoading && <p role="status">Loading solar...</p>}
 
-      {!isLoading && !households.error && households.households.length === 0 && (
-        <p className="text-muted-foreground">
-          No household yet. Set one up on the{" "}
-          <Link to="/appliances" className="text-primary underline">
-            Appliances page
-          </Link>{" "}
-          first.
-        </p>
-      )}
+      {!isLoading && !households.error && households.households.length === 0 && <NoHousehold />}
 
       {solar && !isLoading && (
         <>
@@ -218,9 +207,9 @@ export default function SolarPage() {
           )}
 
           <RecommendedSystems
+            householdId={householdId}
             recommendations={solar.recommendations}
-            locations={solar.locations}
-            locationKey={locationKey}
+            location={solar.profile.location}
             onLocationChange={handleLocationChange}
             budgetText={budgetText}
             onBudgetChange={handleBudgetChange}

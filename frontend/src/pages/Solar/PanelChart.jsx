@@ -37,7 +37,7 @@ export default function PanelChart({ mySystem, onPrevWeek, onNextWeek, canGoNext
             My panels · {formatNumber(mySystem.systemKw)} kW system{" "}
             <button
               type="button"
-              className="ml-1 text-xs font-normal text-primary hover:underline"
+              className="ml-1 text-xs font-normal text-primary-text hover:underline"
               onClick={() => setEditing(true)}
             >
               Change

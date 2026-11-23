@@ -63,7 +63,7 @@ function StatCard({ icon: Icon, iconColor, label, value, note }) {
         <Icon className={`size-4 ${iconColor}`} />
         {label}
       </p>
-      <p className="font-heading text-3xl font-bold">{value}</p>
+      <p className="font-mono text-3xl font-medium">{value}</p>
       <p className="text-xs text-muted-foreground">{note}</p>
     </Card>
   );
