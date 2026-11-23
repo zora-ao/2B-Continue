@@ -20,6 +20,9 @@ class Appliance(db.Model):
         db.CheckConstraint("quantity > 0", name="positive_quantity"),
         db.CheckConstraint("hours_per_day >= 0 AND hours_per_day <= 24",
                            name="valid_daily_hours"),
+        db.CheckConstraint("standby_watts >= 0", name="ck_appliance_standby_watts"),
+        db.CheckConstraint("standby_hours_per_day >= 0 AND hours_per_day + standby_hours_per_day <= 24",
+                           name="ck_appliance_standby_hours"),
     )
 
     id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
@@ -33,6 +36,9 @@ class Appliance(db.Model):
     watts: Mapped[Decimal] = mapped_column(db.Numeric(12, 3), nullable=False)
     quantity: Mapped[int] = mapped_column(db.Integer, nullable=False, default=1)
     hours_per_day: Mapped[Decimal] = mapped_column(db.Numeric(6, 3), nullable=False)
+    standby_watts: Mapped[Decimal | None] = mapped_column(db.Numeric(12, 3))
+    standby_hours_per_day: Mapped[Decimal] = mapped_column(
+        db.Numeric(6, 3), nullable=False, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), nullable=False,
                            default=lambda: datetime.now(timezone.utc))
 

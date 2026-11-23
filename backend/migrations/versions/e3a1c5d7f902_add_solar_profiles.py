@@ -1,13 +1,13 @@
 """Add per-household solar profiles.
 
 Revision ID: e3a1c5d7f902
-Revises: d615c9e270ab
+Revises: e730b4a921cf
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "e3a1c5d7f902"
-down_revision = "d615c9e270ab"
+down_revision = "e730b4a921cf"
 branch_labels = None
 depends_on = None
 

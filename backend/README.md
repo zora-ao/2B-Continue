@@ -69,6 +69,116 @@ Config: `SOLAR_WEATHER_ENABLED` (default true) and `SOLAR_WEATHER_TIMEOUT`
 
 The `e3a1c5d7f902` migration creates `solar_profiles` (one row per household).
 
+## Alerts API
+
+Base path: `/api/households/<household_id>/alerts`. This feature changes backend
+files only. Apply migration `e730b4a921cf` before using the new endpoints.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | base path | Alert list, category counts, unread count, pagination |
+| GET | `/rules` | Saved toggles (or defaults) and current numeric thresholds |
+| PATCH | `/rules` | Save one or more rule toggles and reevaluate the selected month |
+| POST | `/refresh` | Evaluate stored readings/appliances and reconcile alert history |
+| PATCH | `/<alert_id>` | Mark one household-owned alert read or unread |
+| POST | `/mark-all-read` | Mark all alerts in the selected month read |
+
+GET list query parameters:
+
+- `month=YYYY-MM`: defaults to the current Manila month; future months rejected.
+- `category=all|budget|usage|appliances|solar`: defaults to all.
+- `status=active|resolved|all`: defaults to active.
+- `read=all|read|unread`: defaults to all.
+- `limit=50` (1-100), `offset=0` (nonnegative).
+
+Response: `items`, `counts` (all and each category), `unread_count`, `total`,
+`month`, `limit`, `offset`. Counts/unread cover the selected month and status
+before category/read filtering; `total` covers the filtered list before pagination.
+Items include numeric `id`, category/rule/severity, title/message, detail values,
+optional action `{label, href}`, event date, UTC creation/update timestamps,
+read status/timestamp, and active/resolved status/timestamp. Action URLs are hints
+for future frontend integration, not executed redirects.
+
+Examples:
+
+```text
+GET /api/households/1/alerts?category=usage&read=unread&month=2026-11
+```
+
+```jsonc
+// PATCH /api/households/1/alerts/12
+{"is_read": true}
+```
+
+```jsonc
+// POST /api/households/1/alerts/mark-all-read or /refresh
+{"month": "2026-11"}
+```
+
+An empty JSON object also selects the current month. Mark-all-read covers active
+and resolved alerts in that month across all categories, regardless of list filters.
+Refresh returns `month`, `created`, `resolved`, and `active` counts. Refresh does
+not send external notifications. GET requests do not create alerts: call refresh
+when first opening the page to backfill existing data, then load the list.
+
+Rule PATCH accepts booleans only, for example:
+
+```json
+{
+  "daily_limit_exceeded": true,
+  "bill_over_budget": true,
+  "unusual_spike": true,
+  "wasteful_appliances": true,
+  "solar_underperforming": true,
+  "weekly_summary": false
+}
+```
+
+Those values are also the defaults. Optional `?month=YYYY-MM` on rule GET/PATCH
+selects thresholds and the month to reevaluate; toggles themselves are household-wide.
+Disabling a rule resolves its active alerts across all months without deleting history.
+Reenabling reevaluates the selected month; other months can be explicitly refreshed.
+
+Rules match the page's behavior:
+
+- Daily limit: logged daily kWh greater than budget / rate / calendar days.
+- Bill over budget: average logged daily kWh times calendar days times rate
+  exceeds budget. Missing days are not treated as zero.
+- Unusual spike: usage greater than 115% of the average of up to seven prior
+  logged days within 14 days, requiring at least three baseline days.
+- Appliances: highest estimated active consumption and optional recorded standby
+  consumption. Highest cost alone is not claimed to prove inefficiency. Potential
+  hour-reduction savings are offered only for flexible appliances.
+- Solar: logged generation below 70% of a positive manually supplied expectation.
+- Weekly summary: recap for each elapsed Sunday with recorded usage, including
+  the number of known days. It is generated on evaluation, not scheduled delivery.
+
+Every meter/solar write or deletion checks the affected month and, when relevant,
+the next month's 14-day usage baseline. Reading writes and alert updates commit
+together. Rules PATCH and explicit refresh also evaluate conditions. After editing
+appliances or saving/resetting plans, explicitly refresh to update their alerts.
+Budget/rate use the month's saved plan when present, otherwise household settings.
+
+Events have stable deduplication keys per day/month/appliance. Repeated checks
+update details while retaining read state. Conditions no longer met are resolved;
+if a resolved condition returns, it becomes unread again. This preserves history
+without creating a duplicate on each reading. Old monthly events are not expired
+automatically; filter by month or refresh a historical month as needed.
+
+Optional evidence fields added for the screenshot's standby and solar warnings:
+
+- Appliance POST/PATCH: `standby_watts` (nullable, nonnegative, 3 decimals) and
+  `standby_hours_per_day` (defaults to 0). Active plus standby hours cannot exceed
+  24. Both power and hours must be positive to create a standby alert. These are
+  explicit manual inputs, not inferred from appliance type. Standby cost is a
+  separate estimate; existing active-consumption calculations remain unchanged.
+- Solar PUT: `expected_generation_kwh` (nullable, nonnegative, 3 decimals), in
+  addition to existing generation/self-consumption fields. Without a positive
+  expectation, no underperformance alert is generated. No fault cause is inferred.
+
+The dashboard's alert preview and `/dashboard/alerts` now return the same saved
+active alerts and read status; the overview includes `unread_alert_count`.
+
 ## Dashboard API
 
 Base path: `/api/households/<household_id>/dashboard`. No frontend files were
@@ -77,7 +187,7 @@ changed for this feature.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | base path | Overview cards, budget, chart, appliance breakdown, top 3 alerts |
-| GET | `/alerts` | All currently calculated dashboard alerts |
+| GET | `/alerts` | All saved active dashboard alerts |
 | GET | `/meter-readings` | Selected month's manual meter/usage logs |
 | POST | `/meter-readings` | Log or replace a reading using a `date` in the body |
 | PUT | `/meter-readings/YYYY-MM-DD` | Log or replace that date's reading |
@@ -146,11 +256,10 @@ Overview response groups:
   historical chart buckets; monthly buckets use its monthly kWh allowance.
 - `appliance_breakdown`: current manual appliance estimates and percentage shares,
   sorted by estimated consumption; these are not measured appliance consumption.
-- `alerts` / `alert_count`: top three calculated alerts and total count. `/alerts`
-  returns all. Alerts cover budget projection, latest logged usage over the limit,
-  usage >15% above up to seven previous logged days (minimum three within 14 days),
-  and the biggest estimated appliance cost. No solar-fault claims, saved read
-  state, background monitoring, or external notification delivery are implemented.
+- `alerts` / `alert_count`: top three saved active alerts and total count.
+  `/dashboard/alerts` returns all saved active alerts for the month. Read state,
+  rule toggles, refresh behavior, and event history are documented in Alerts API
+  above. No background scheduler or external notification delivery is implemented.
 
 When a plan is saved for the selected month, its budget and rate are used and
 `settings_source` is `saved_budget_plan`. `saved_plan_is_stale` flags changed source
