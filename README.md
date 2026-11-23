@@ -403,6 +403,7 @@ Most `GET` endpoints accept `?month=YYYY-MM` (default: the current month in Mani
 | --- | --- |
 | **Google Gemini** (`gemini-3.5-flash-lite`) | *Inside the app:* reads the appliance name, type and rated watts from a label photo. The user confirms every value before it's saved. |
 | **Claude Code** (Anthropic) | *During development:* coding help, planning and design docs (`docs/superpowers/`), and writing this README. Every change was reviewed by the team. |
+| **ChatGPT** (OpenAI) | *During development:* brainstorming ideas, research, and answering questions while building. |
 
 ---
 
