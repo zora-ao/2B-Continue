@@ -1,4 +1,4 @@
-# Render blueprint for the EnergyWise Flask API.
+# Render blueprint for the Kuryenta Flask API (service name kept so Render keeps the same service).
 # In Render: New > Blueprint > pick this repo. It asks for DATABASE_URL once.
 services:
   - type: web

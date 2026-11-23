@@ -9,7 +9,7 @@ export default function AlertRules({ settings, onToggle, busy }) {
       <CardHeader>
         <CardTitle className="font-heading text-lg">Alert rules</CardTitle>
         <CardDescription>
-          Choose when EnergyWise should warn you. Alerts are checked each time you log a reading.
+          Choose when Kuryenta should warn you. Alerts are checked each time you log a reading.
         </CardDescription>
       </CardHeader>
 

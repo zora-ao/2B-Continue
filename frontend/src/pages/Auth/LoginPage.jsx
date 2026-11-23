@@ -44,7 +44,7 @@ export default function LoginPage() {
         : "Welcome back. Log in to see your energy use."}
       footer={
         <>
-          New to EnergyWise?{" "}
+          New to Kuryenta?{" "}
           <Link to="/register" state={location.state} className="text-primary underline">
             Create an account
           </Link>
