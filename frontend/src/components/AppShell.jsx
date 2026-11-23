@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
 import LoginCheck from "@/components/LoginCheck";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,16 @@ import { HouseholdsProvider, useHouseholds } from "@/hooks/useHouseholds";
 
 function HouseholdOutlet() {
   const { householdId } = useHouseholds();
-  return <Outlet key={householdId} />;
+  const { pathname } = useLocation();
+  // Keyed by page so each one fades in when you navigate to it.
+  return (
+    <div
+      key={pathname}
+      className="animate-in fade-in slide-in-from-bottom-2 duration-250 ease-out motion-reduce:animate-none"
+    >
+      <Outlet key={householdId} />
+    </div>
+  );
 }
 
 // Layout for every app page. Everyone has a session (a guest at least) once the check is done.
