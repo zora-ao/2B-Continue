@@ -33,12 +33,26 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
   }, [editing]);
 
   function updateField(field, value) {
-    setForm({ ...form, [field]: value });
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      wattsEstimated: field === "watts" ? false : current.wattsEstimated,
+    }));
   }
 
   // A scan only suggests name, type and watts; the user still checks them and adds hours.
   function applyScan(result) {
-    setForm((current) => ({ ...current, ...scanToFields(result) }));
+    setForm((current) => {
+      const fields = scanToFields(result);
+      if (result.watts_estimated && current.watts && !current.wattsEstimated) {
+        delete fields.watts;
+      }
+      return {
+        ...current,
+        ...fields,
+        wattsEstimated: fields.watts === undefined ? current.wattsEstimated : Boolean(result.watts_estimated),
+      };
+    });
     setErrors((current) => ({ ...current, name: undefined, watts: undefined }));
     document.getElementById("hoursPerDay")?.focus();
   }
@@ -109,9 +123,15 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
                   placeholder="900"
                   value={form.watts}
                   aria-invalid={Boolean(errors.watts)}
-                  aria-describedby={errors.watts ? "watts-error" : undefined}
+                  aria-describedby={[errors.watts && "watts-error", form.wattsEstimated && "watts-estimate"]
+                    .filter(Boolean).join(" ") || undefined}
                   onChange={(event) => updateField("watts", event.target.value)}
                 />
+                {form.wattsEstimated && (
+                  <p id="watts-estimate" className="text-xs text-muted-foreground">
+                    Estimated from the photo. Check the appliance label if available.
+                  </p>
+                )}
               </Field>
 
               <Field id="hoursPerDay" label="Hours per day" error={errors.hoursPerDay}>

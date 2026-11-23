@@ -61,5 +61,16 @@ def test_guest_identity_upload_and_qr_handoff(client, monkeypatch):
 
 def test_watts_require_matching_label_evidence():
     assert validate_result({**RESULT, "label_text": "Rated input: 45 W"}) == RESULT
-    assert validate_result({**RESULT, "label_text": "120 V, 0.5 A"})["watts"] is None
-    assert validate_result({**RESULT, "label_text": "45 W / 60 W"})["watts"] is None
+    for label in ("120 V, 0.5 A", "45 W / 60 W"):
+        result = validate_result({**RESULT, "label_text": label})
+        assert result["watts"] == 50
+        assert result["watts_estimated"] is True
+
+
+def test_type_only_scan_fills_name_and_estimated_power():
+    assert validate_result({"type": "fan"}) == {
+        "name": "Electric fan", "type": "fan", "watts": 50, "watts_estimated": True,
+    }
+    assert validate_result({"type": "other", "name": "Rice cooker", "estimated_watts": 700}) == {
+        "name": "Rice cooker", "type": "other", "watts": 700, "watts_estimated": True,
+    }

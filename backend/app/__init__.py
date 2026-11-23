@@ -54,7 +54,7 @@ def create_app(test_config=None) -> Flask:
         JWT_SESSION_COOKIE=False,
         JWT_COOKIE_CSRF_PROTECT=True,
         GEMINI_API_KEY=os.getenv("GEMINI_API_KEY"),
-        GEMINI_SCAN_MODEL=os.getenv("GEMINI_SCAN_MODEL", "gemini-3.8-flash"),
+        GEMINI_SCAN_MODEL=os.getenv("GEMINI_SCAN_MODEL", "gemini-3.5-flash-lite"),
     )
     if test_config:
         app.config.update(test_config)
