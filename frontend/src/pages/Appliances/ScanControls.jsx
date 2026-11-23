@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, CircleCheck, Smartphone, Upload } from "lucide-react";
 import { api } from "@/api";
 import Spinner from "@/components/Spinner";
@@ -11,6 +11,14 @@ export default function ScanControls({ onResult, disabled }) {
   const cameraInput = useRef(null);
   const [status, setStatus] = useState({ state: "idle", message: "" });
   const [phoneOpen, setPhoneOpen] = useState(false);
+  // A slow scan can finish after the user switched to editing (this unmounts); drop its result.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   function fill(result) {
     onResult(result);
@@ -28,9 +36,10 @@ export default function ScanControls({ onResult, disabled }) {
 
     setStatus({ state: "reading", message: "Reading the label..." });
     try {
-      fill(await api.readLabel(await shrinkPhoto(file)));
+      const result = await api.readLabel(await shrinkPhoto(file));
+      if (mounted.current) fill(result);
     } catch (error) {
-      setStatus({ state: "error", message: scanErrorMessage(error) });
+      if (mounted.current) setStatus({ state: "error", message: scanErrorMessage(error) });
     }
   }
 
@@ -73,14 +82,23 @@ export default function ScanControls({ onResult, disabled }) {
         </Button>
       </div>
 
-      {/* The buttons open these; they stay out of the tab order. */}
-      <input ref={uploadInput} type="file" accept="image/*" tabIndex={-1} className="sr-only" onChange={handleFile} />
+      {/* The buttons open these, so they stay out of the tab order and the accessibility tree. */}
+      <input
+        ref={uploadInput}
+        type="file"
+        accept="image/*"
+        tabIndex={-1}
+        aria-hidden="true"
+        className="sr-only"
+        onChange={handleFile}
+      />
       <input
         ref={cameraInput}
         type="file"
         accept="image/*"
         capture="environment"
         tabIndex={-1}
+        aria-hidden="true"
         className="sr-only"
         onChange={handleFile}
       />

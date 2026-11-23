@@ -24,6 +24,8 @@ import ScanControls from "./ScanControls";
 export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate, days }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  // Bumped when the form resets, so the scan controls start fresh (no stale "Filled" message).
+  const [scanKey, setScanKey] = useState(0);
 
   useEffect(() => {
     setForm(editing ? applianceToForm(editing) : EMPTY_FORM);
@@ -47,7 +49,10 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
     const result = parseApplianceForm(form);
     setErrors(result.errors);
     if (result.appliance) {
-      if (await onSubmit(result.appliance)) setForm(EMPTY_FORM);
+      if (await onSubmit(result.appliance)) {
+        setForm(EMPTY_FORM);
+        setScanKey((key) => key + 1);
+      }
     }
   }
 
@@ -64,7 +69,7 @@ export default function ApplianceForm({ editing, onSubmit, onCancel, busy, rate,
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           <fieldset disabled={busy} className="flex min-w-0 flex-col gap-4">
-            {!editing && <ScanControls onResult={applyScan} disabled={busy} />}
+            {!editing && <ScanControls key={scanKey} onResult={applyScan} disabled={busy} />}
 
             <Field id="name" label="Name" error={errors.name}>
               <Input

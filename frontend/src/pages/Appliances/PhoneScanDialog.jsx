@@ -31,6 +31,7 @@ export default function PhoneScanDialog({ open, onOpenChange, onResult }) {
     if (!open) return;
     const controller = new AbortController();
     let timer;
+    pendingResult.current = null;
     setCode("");
     setPhase("starting");
     setError("");
@@ -38,6 +39,7 @@ export default function PhoneScanDialog({ open, onOpenChange, onResult }) {
     async function poll(sessionCode) {
       try {
         const session = await api.getScanSession(sessionCode, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         if (session.status === "done") {
           pendingResult.current = session.result;
           callbacks.current.onOpenChange(false);
@@ -47,7 +49,7 @@ export default function PhoneScanDialog({ open, onOpenChange, onResult }) {
           timer = setTimeout(() => poll(sessionCode), POLL_MS);
         }
       } catch (err) {
-        if (err.name === "AbortError") return;
+        if (controller.signal.aborted) return;
         setPhase("error");
         setError(err.message);
       }
@@ -130,7 +132,10 @@ export default function PhoneScanDialog({ open, onOpenChange, onResult }) {
           )}
 
           {phase === "waiting" && (
-            <div className="flex w-full flex-col items-center gap-1">
+            <div className="flex w-full flex-col items-center gap-2">
+              <p className="w-full break-all rounded-lg bg-secondary px-3 py-2 text-center font-mono text-xs select-all">
+                {link}
+              </p>
               <Button type="button" variant="outline" onClick={copyLink}>
                 <Copy />
                 Copy link

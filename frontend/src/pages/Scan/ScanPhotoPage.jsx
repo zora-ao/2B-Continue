@@ -75,6 +75,7 @@ export default function ScanPhotoPage() {
             accept="image/*"
             capture="environment"
             tabIndex={-1}
+            aria-hidden="true"
             className="sr-only"
             onChange={handleFile}
           />
