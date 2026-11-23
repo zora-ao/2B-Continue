@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Plug,
@@ -16,6 +17,7 @@ import {
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
+import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -155,9 +157,43 @@ function UserMenu({ collapsed = false }) {
   );
 }
 
+function ThemeToggle({ theme, onToggle, collapsed = false }) {
+  const isDark = theme === "dark";
+  const label = isDark ? "Light mode" : "Dark mode";
+  const action = isDark ? "Switch to light mode" : "Switch to dark mode";
+  const Icon = isDark ? Sun : Moon;
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        title={action}
+        aria-label={action}
+        className={ICON_BUTTON}
+      >
+        <Icon className="size-5" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={action}
+      className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition outline-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <Icon className="size-5 shrink-0" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+  const [theme, toggleTheme] = useTheme();
 
   return (
     <>
@@ -165,16 +201,19 @@ export default function Sidebar() {
       <header className="sticky top-0 z-20 border-b border-sidebar-border bg-sidebar md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Logo />
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            aria-controls="mobile-nav"
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:text-foreground"
-          >
-            {open ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} collapsed />
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-nav"
+              className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:text-foreground"
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
         {open && (
           <nav id="mobile-nav" aria-label="Main" className="flex flex-col gap-1.5 px-4 pb-4">
@@ -207,7 +246,8 @@ export default function Sidebar() {
         <nav aria-label="Main" className="flex flex-col gap-1.5">
           <NavLinks collapsed={collapsed} />
         </nav>
-        <div className="mt-auto">
+        <div className={cn("mt-auto flex flex-col gap-3", collapsed && "items-center")}>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} collapsed={collapsed} />
           <UserMenu collapsed={collapsed} />
         </div>
       </aside>

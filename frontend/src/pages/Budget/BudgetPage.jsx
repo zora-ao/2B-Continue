@@ -4,6 +4,7 @@ import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
 import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
 import { parseBudget } from "@/lib/budget";
@@ -170,7 +171,7 @@ export default function BudgetPage() {
         </p>
       )}
 
-      {isLoading && <p role="status">Loading your budget plan...</p>}
+      {isLoading && <PageSkeleton variant="budget" label="Loading your budget plan..." />}
 
       {!isLoading && !households.error && households.households.length === 0 && (
         <NoHousehold />

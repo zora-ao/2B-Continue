@@ -4,6 +4,7 @@ import { api } from "@/api";
 import HouseholdPicker from "@/components/HouseholdPicker";
 import NoHousehold from "@/components/NoHousehold";
 import PageHeader from "@/components/PageHeader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useHouseholds } from "@/hooks/useHouseholds";
 import { ALERT_CATEGORIES } from "@/lib/alerts";
@@ -140,7 +141,7 @@ export default function AlertsPage() {
         {statusMessage}
       </p>
 
-      {isLoading && <p role="status">Loading your alerts...</p>}
+      {isLoading && <PageSkeleton variant="alerts" label="Loading your alerts..." />}
 
       {!isLoading && !households.error && households.households.length === 0 && (
         <NoHousehold />
