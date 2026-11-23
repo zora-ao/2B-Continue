@@ -1,5 +1,97 @@
 # EnergyWise backend
 
+## Dashboard API
+
+Base path: `/api/households/<household_id>/dashboard`. No frontend files were
+changed for this feature.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | base path | Overview cards, budget, chart, appliance breakdown, top 3 alerts |
+| GET | `/alerts` | All currently calculated dashboard alerts |
+| GET | `/meter-readings` | Selected month's manual meter/usage logs |
+| POST | `/meter-readings` | Log or replace a reading using a `date` in the body |
+| PUT | `/meter-readings/YYYY-MM-DD` | Log or replace that date's reading |
+| DELETE | `/meter-readings/YYYY-MM-DD` | Remove that date's reading |
+| GET | `/solar-generation` | Selected month's manually logged solar generation |
+| PUT | `/solar-generation/YYYY-MM-DD` | Log or replace that date's solar generation |
+| DELETE | `/solar-generation/YYYY-MM-DD` | Remove that date's solar log |
+
+GET endpoints accept `?month=2026-11`, defaulting to the current Manila month.
+The overview also accepts `period=day|week|month` for the chart: last 14 days,
+8 Monday-based weeks, or 12 calendar months ending in the selected month. Week
+and month buckets stop at the as-of date. Future months and future log dates
+are rejected. Historical overviews use the selected month's last day; today's
+card is null when viewing a historical month.
+
+Example POST `/meter-readings` for an end-of-day cumulative meter counter:
+
+```json
+{"date": "2026-11-22", "meter_reading_kwh": 12345.6}
+```
+
+Alternatively, provide a known daily consumption total:
+
+```json
+{"date": "2026-11-22", "consumption_kwh": 5.3}
+```
+
+PUT accepts the same body without `date`. Supply exactly one kWh field. One row
+per household/date is retained; replacement returns 200, creation returns 201.
+The returned `item` includes raw input and `daily_usage_kwh`. Input accepts zero
+and up to three decimal places. Dates must be between 2000-01-01 and today.
+
+Cumulative readings must be nondecreasing relative to adjacent cumulative logs.
+Usage for date D is counter(D) minus counter(D-1), representing that day's usage.
+A first counter is only a baseline. Missing consecutive counters produce null
+usage, not an invented daily value. Backfilling or removing readings automatically
+changes the derived usage on subsequent dates. No meter replacement/rollover
+workflow is implemented. Direct daily totals are used exactly as entered.
+
+Solar PUT body:
+
+```json
+{"generation_kwh": 8.4, "self_consumed_kwh": 5.2}
+```
+
+`self_consumed_kwh` is optional, cannot exceed generation, and is needed to
+estimate avoided grid cost. Savings = self-consumed kWh times the selected rate;
+generation alone does not establish savings or export credits. Missing solar
+logs return null values and source `unavailable`. Solar is not subtracted again
+from grid-meter consumption. Hardware integrations are not implemented.
+
+Overview response groups:
+
+- `usage`: today's/as-of-day kWh, known monthly kWh, daily/monthly allowances,
+  percentage used, logged days, elapsed days, and data coverage.
+- `budget`: known consumption cost, remaining budget, projected bill, status,
+  days left, and safe daily spend. Projection uses average recorded daily usage
+  times the calendar month's length. Missing days are never counted as zero.
+  Days left includes today only when today's usage is unrecorded; it is zero for
+  historical months. Safe spend is null when no consumption is known or no days
+  remain. It does not account for unrecorded consumption on past days.
+- `solar`: today's/as-of-day generation, estimated self-consumption savings, source.
+- `chart`: dated buckets with kWh (null if absent), limits, logged/expected days,
+  coverage, and over-limit status. With partial coverage, a below-limit result
+  is unknown. Limits use the selected month's budget/rate, including across
+  historical chart buckets; monthly buckets use its monthly kWh allowance.
+- `appliance_breakdown`: current manual appliance estimates and percentage shares,
+  sorted by estimated consumption; these are not measured appliance consumption.
+- `alerts` / `alert_count`: top three calculated alerts and total count. `/alerts`
+  returns all. Alerts cover budget projection, latest logged usage over the limit,
+  usage >15% above up to seven previous logged days (minimum three within 14 days),
+  and the biggest estimated appliance cost. No solar-fault claims, saved read
+  state, background monitoring, or external notification delivery are implemented.
+
+When a plan is saved for the selected month, its budget and rate are used and
+`settings_source` is `saved_budget_plan`. `saved_plan_is_stale` flags changed source
+data. Otherwise household settings are used. Appliance breakdowns always use
+current original appliance hours, not recommended plan hours. Costs exclude fixed
+charges, taxes, time-of-use prices, and export credits. No-data amounts are null;
+zero-budget percentage fields are null to avoid division by zero.
+
+The `d615c9e270ab` migration adds `meter_readings` and `solar_generation`.
+
 ## Budget Planner API
 
 Base path: `/api/households/<household_id>/budget-planner`.
