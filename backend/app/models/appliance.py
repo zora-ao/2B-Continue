@@ -26,6 +26,10 @@ class Appliance(db.Model):
     household_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("households.id"),
                              nullable=False, index=True)
     name: Mapped[str] = mapped_column(db.String(120), nullable=False)
+    appliance_type: Mapped[str | None] = mapped_column(db.String(80))
+    room: Mapped[str | None] = mapped_column(db.String(120))
+    is_must_have: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=False,
+                                             server_default=db.false())
     watts: Mapped[Decimal] = mapped_column(db.Numeric(12, 3), nullable=False)
     quantity: Mapped[int] = mapped_column(db.Integer, nullable=False, default=1)
     hours_per_day: Mapped[Decimal] = mapped_column(db.Numeric(6, 3), nullable=False)

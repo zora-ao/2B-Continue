@@ -14,12 +14,12 @@ export function dailyKwh(appliance) {
   return (watts * quantity * hoursPerDay) / 1000;
 }
 
-export function monthlyKwh(appliance) {
-  return dailyKwh(appliance) * DAYS_PER_MONTH;
+export function monthlyKwh(appliance, days = DAYS_PER_MONTH) {
+  return dailyKwh(appliance) * days;
 }
 
-export function monthlyCost(appliance, rate = RATE_PER_KWH) {
-  return monthlyKwh(appliance) * rate;
+export function monthlyCost(appliance, rate = RATE_PER_KWH, days = DAYS_PER_MONTH) {
+  return monthlyKwh(appliance, days) * rate;
 }
 
 export function totalDailyKwh(appliances) {

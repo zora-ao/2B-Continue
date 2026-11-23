@@ -1,10 +1,14 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
-from pathlib import Path
 
+from .blueprints.api.routes import api
+from .blueprints.appliances import appliances_bp
+from .blueprints.households import households_bp
+from .errors import register_error_handlers
 from .extensions import db, migrate
 
 
@@ -12,7 +16,7 @@ def create_app(test_config=None) -> Flask:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
     app = Flask(__name__)
-    app.config["JSON_SORT_KEYS"] = False
+    app.json.sort_keys = False
     
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
@@ -26,13 +30,16 @@ def create_app(test_config=None) -> Flask:
         app.config.update(test_config)
 
     db.init_app(app)
-    from . import models  
+    from . import models  # Register all models for migrations.
     migrate.init_app(app, db, directory=str(Path(__file__).resolve().parents[1] / "migrations"))
 
-    origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    register_error_handlers(app)
+
+    origins = [origin.strip() for origin in
+               os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")]
     CORS(app, resources={r"/api/*": {"origins": origins}})
 
-    from .blueprints.api.routes import api
-
     app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(appliances_bp, url_prefix="/api/households/<int:household_id>/appliances")
+    app.register_blueprint(households_bp, url_prefix="/api/households")
     return app
