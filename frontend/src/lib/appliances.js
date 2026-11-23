@@ -1,18 +1,23 @@
-// Helpers for the "Add appliance" form.
-//
-// Form inputs always give us text ("900", "2.5"), so before saving we
-// check the values and turn them into real numbers.
+// Everything about an appliance that isn't UI:
+// the list of types, and turning form text into a saved appliance.
+import { AirVent, Fan, Lightbulb, Plug, Refrigerator, Tv } from "lucide-react";
 
+// To add a new type, add one line here.
 export const APPLIANCE_TYPES = [
-  { value: "aircon", label: "Aircon" },
-  { value: "refrigerator", label: "Refrigerator" },
-  { value: "tv", label: "Television" },
-  { value: "fan", label: "Electric fan" },
-  { value: "lights", label: "Lights" },
-  { value: "other", label: "Other" },
+  { value: "aircon", label: "Aircon", icon: AirVent },
+  { value: "refrigerator", label: "Refrigerator", icon: Refrigerator },
+  { value: "tv", label: "Television", icon: Tv },
+  { value: "fan", label: "Electric fan", icon: Fan },
+  { value: "lights", label: "Lights", icon: Lightbulb },
+  { value: "other", label: "Other", icon: Plug },
 ];
 
-// What the form shows when it's empty.
+export function getTypeIcon(type) {
+  const found = APPLIANCE_TYPES.find((item) => item.value === type);
+  return found ? found.icon : Plug;
+}
+
+// What the form shows when it's empty. Inputs always hold text.
 export const EMPTY_FORM = {
   name: "",
   type: "other",
@@ -23,8 +28,8 @@ export const EMPTY_FORM = {
 };
 
 // Checks the form and returns { appliance, errors }.
-//   - Valid:   appliance is ready to save, errors is {}
-//   - Invalid: appliance is null, errors says what's wrong per field
+//   valid:   appliance is ready to save, errors is {}
+//   invalid: appliance is null, errors has a message per field
 export function parseApplianceForm(form) {
   const name = form.name.trim();
   const watts = toNumber(form.watts);
@@ -32,7 +37,6 @@ export function parseApplianceForm(form) {
   const quantity = toNumber(form.quantity);
 
   const errors = {};
-
   if (name === "") {
     errors.name = "Name is required";
   }
@@ -75,7 +79,7 @@ export function applianceToForm(appliance) {
 
 // "900" → 900, "abc" → NaN, "" → NaN (a blank box is not 0).
 function toNumber(text) {
-  if (String(text).trim() === "") {
+  if (text.trim() === "") {
     return NaN;
   }
   return Number(text);

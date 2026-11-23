@@ -1,21 +1,12 @@
-import { AirVent, Fan, Lightbulb, Pencil, Plug, Refrigerator, Trash2, Tv } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getTypeIcon } from "@/lib/appliances";
 import { formatKwh, formatPeso, monthlyCost, monthlyKwh } from "@/lib/energy";
 
-// Which icon to show for each appliance type.
-const TYPE_ICONS = {
-  aircon: AirVent,
-  refrigerator: Refrigerator,
-  tv: Tv,
-  fan: Fan,
-  lights: Lightbulb,
-  other: Plug,
-};
-
 export default function ApplianceCard({ appliance, onEdit, onDelete }) {
-  const TypeIcon = TYPE_ICONS[appliance.type] ?? Plug;
+  const TypeIcon = getTypeIcon(appliance.type);
 
   // "900 W · 4 h/day", or "5 × 9 W · 5 h/day" when there is more than one.
   let usage = `${appliance.watts} W · ${appliance.hoursPerDay} h/day`;

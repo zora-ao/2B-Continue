@@ -9,8 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ApplianceForm from "./ApplianceForm.jsx";
-import ApplianceList from "./ApplianceList.jsx";
+import PageHeader from "@/components/PageHeader";
+import ApplianceForm from "./ApplianceForm";
+import ApplianceList from "./ApplianceList";
 
 // The Appliances page: a form on the left, the list on the right.
 //
@@ -45,12 +46,10 @@ export default function AppliancesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold">Appliances</h1>
-        <p className="text-muted-foreground">
-          Type in your appliances to see how much each one costs.
-        </p>
-      </header>
+      <PageHeader
+        title="Appliances"
+        subtitle="Type in your appliances to see how much each one costs."
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="w-full lg:w-[400px] lg:shrink-0">

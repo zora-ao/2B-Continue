@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
-import Sidebar from "./components/Sidebar.jsx";
-import AppliancesPage from "./pages/Appliances/AppliancesPage.jsx";
-import Placeholder from "./pages/Placeholder.jsx";
+import Sidebar from "@/components/Sidebar";
+import AppliancesPage from "@/pages/Appliances/AppliancesPage";
+import Placeholder from "@/pages/Placeholder";
 
 export default function App() {
   return (

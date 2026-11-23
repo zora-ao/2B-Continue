@@ -12,13 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dailyKwh, formatKwh, formatPeso, monthlyCost } from "@/lib/energy";
 import {
   APPLIANCE_TYPES,
   EMPTY_FORM,
   applianceToForm,
   parseApplianceForm,
-} from "./applianceForm.js";
+} from "@/lib/appliances";
+import { dailyKwh, formatKwh, formatPeso, monthlyCost } from "@/lib/energy";
 
 // Add or edit one appliance.
 //   editing  – the appliance being edited, or null when adding a new one

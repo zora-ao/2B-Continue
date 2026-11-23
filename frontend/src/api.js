@@ -1,17 +1,17 @@
-// Thin wrapper around fetch for talking to the Flask API.
+// Talks to the Flask API. In development, Vite forwards /api to Flask
+// (see vite.config.js).
 async function request(path, options = {}) {
-  const res = await fetch(`/api${path}`, {
+  const response = await fetch(`/api${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed: ${response.status}`);
+  }
   return data;
 }
 
 export const api = {
   health: () => request("/health"),
-  listItems: () => request("/items"),
-  createItem: (text) =>
-    request("/items", { method: "POST", body: JSON.stringify({ text }) }),
 };
