@@ -1,8 +1,21 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Bell, LayoutDashboard, LogOut, Menu, Plug, Sun, Wallet, X } from "lucide-react";
+import {
+  Bell,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plug,
+  Sun,
+  UserPlus,
+  Wallet,
+  X,
+} from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
+import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -13,35 +26,56 @@ const LINKS = [
   { to: "/alerts", label: "Alerts", icon: Bell },
 ];
 
-function NavLinks({ onNavigate }) {
+function NavLinks({ onNavigate, collapsed = false }) {
   return LINKS.map(({ to, label, icon: LinkIcon }) => (
     <NavLink
       key={to}
       to={to}
       end={to === "/"}
       onClick={onNavigate}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition",
+          "flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+          collapsed ? "justify-center px-0" : "px-3.5",
           isActive
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
             : "text-muted-foreground hover:text-foreground",
         )
       }
     >
-      <LinkIcon className="size-5" />
-      {label}
+      <LinkIcon className="size-5 shrink-0" />
+      <span className={collapsed ? "sr-only" : undefined}>{label}</span>
     </NavLink>
   ));
 }
+
+const ICON_BUTTON =
+  "flex size-10 items-center justify-center rounded-lg text-muted-foreground transition outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const AUTH_LINK =
   "flex flex-1 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 // Guests can log in or create an account from here; their data comes with them.
-function GuestMenu() {
+function GuestMenu({ collapsed = false }) {
   const location = useLocation();
   const from = { from: location };
+
+  if (collapsed) {
+    return (
+      <div className="flex justify-center border-t border-sidebar-border pt-4">
+        <Link
+          to="/register"
+          state={from}
+          title="Create account"
+          aria-label="Create account"
+          className={cn(ICON_BUTTON, "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+        >
+          <UserPlus className="size-5" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3 border-t border-sidebar-border pt-4">
@@ -61,11 +95,11 @@ function GuestMenu() {
   );
 }
 
-function UserMenu() {
+function UserMenu({ collapsed = false }) {
   const { user, logout } = useAuth();
   const [error, setError] = useState("");
 
-  if (user.isGuest) return <GuestMenu />;
+  if (user.isGuest) return <GuestMenu collapsed={collapsed} />;
 
   async function handleLogout() {
     setError("");
@@ -74,6 +108,27 @@ function UserMenu() {
     } catch {
       setError("Couldn't log out. Check your connection and try again.");
     }
+  }
+
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-2 border-t border-sidebar-border pt-4">
+        <button
+          type="button"
+          onClick={handleLogout}
+          title="Log out"
+          aria-label="Log out"
+          className={ICON_BUTTON}
+        >
+          <LogOut className="size-5" />
+        </button>
+        {error && (
+          <p role="alert" className="text-center text-xs break-words text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -100,6 +155,7 @@ function UserMenu() {
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
 
   return (
     <>
@@ -126,16 +182,31 @@ export default function Sidebar() {
         )}
       </header>
 
-      {/* Desktop: full sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col gap-1.5 border-r border-sidebar-border bg-sidebar px-5 py-7 md:flex">
-        <div className="mb-6">
-          <Logo />
+      {/* Desktop: full sidebar, or an icons-only strip when collapsed */}
+      <aside
+        className={cn(
+          "sticky top-0 hidden h-screen shrink-0 flex-col gap-1.5 overflow-hidden border-r border-sidebar-border bg-sidebar py-7 transition-[width] duration-200 motion-reduce:transition-none md:flex",
+          collapsed ? "w-[72px] px-3" : "w-[260px] px-5",
+        )}
+      >
+        <div className={cn("mb-6 flex gap-2", collapsed ? "flex-col items-center" : "items-center justify-between")}>
+          <Logo compact={collapsed} />
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={ICON_BUTTON}
+          >
+            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          </button>
         </div>
         <nav aria-label="Main" className="flex flex-col gap-1.5">
-          <NavLinks />
+          <NavLinks collapsed={collapsed} />
         </nav>
         <div className="mt-auto">
-          <UserMenu />
+          <UserMenu collapsed={collapsed} />
         </div>
       </aside>
     </>
