@@ -1,4 +1,7 @@
-# Kuryenta
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/kuryenta-logo-white.svg">
+  <img src="docs/assets/kuryenta-logo-navy.svg" alt="Kuryenta" width="360">
+</picture>
 
 **Alamin ang gastos bago dumating ang bill.**
 *Know the cost before the bill arrives.*
