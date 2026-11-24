@@ -402,8 +402,8 @@ Most `GET` endpoints accept `?month=YYYY-MM` (default: the current month in Mani
 | Tool | Used for |
 | --- | --- |
 | **Google Gemini** (`gemini-3.5-flash-lite`) | *Inside the app:* reads the appliance name, type and rated watts from a label photo. The user confirms every value before it's saved. |
-| **Claude Code** (Anthropic) | *During development:* coding help, planning and design docs (`docs/superpowers/`), and writing this README. Every change was reviewed by the team. |
-| **ChatGPT** (OpenAI) | *During development:* brainstorming ideas, research, and answering questions while building. |
+| **Claude Code** (Anthropic) - (Opus 5.5) | *During development:* coding help, planning and design docs (`docs/superpowers/`), and writing this README. Every change was reviewed by the team. Also used for frontend development. |
+| **ChatGPT Codex** (OpenAI) - (GPT 6.1 Sol) | *During development:* brainstorming ideas, research, and answering questions while building. Also used for getting calculations for the dashboard, planning, and the solar backend. |
 
 ---
 
@@ -411,11 +411,11 @@ Most `GET` endpoints accept `?month=YYYY-MM` (default: the current month in Mani
 
 | Name | Role | GitHub |
 | --- | --- | --- |
-| Carl Jasper Ramos | TODO: Frontend | [@zora-ao](https://github.com/zora-ao) |
-| Creon Perry Barcenas Talisic | TODO: Backend | [@creont28](https://github.com/creont28) |
-| Mark Angelo Maloto | TODO: Concept & Documentation | [@markangelomaloto](https://github.com/markangelomaloto) |
-| Jouhann Cadawas | TODO: Backend | [@Hojannn](https://github.com/Hojannn) |
-| Rafael Pomique| TODO: Checker | [@leafexx](https://github.com/leafexx) |
+| Carl Jasper Ramos | Frontend | [@zora-ao](https://github.com/zora-ao) |
+| Creon Perry Barcenas Talisic | Backend | [@creont28](https://github.com/creont28) |
+| Mark Angelo Maloto | Concept & Documentation | [@markangelomaloto](https://github.com/markangelomaloto) |
+| Eryck Jouhann Cadawas | Backend | [@Hojannn](https://github.com/Hojannn) |
+| Rafael Pomique| Checker | [@leafexx](https://github.com/leafexx) |
 
 ### Contributing
 
