@@ -7,7 +7,7 @@ import { roundHours } from "@/lib/budget";
 import { formatKwh, formatNumber, formatPeso } from "@/lib/energy";
 import { cn } from "@/lib/utils";
 
-export default function PlanTable({ plan, onHoursChange, busy }) {
+export default function PlanTable({ plan, isSaved, onHoursChange, busy }) {
   const hasItems = plan.items.length > 0;
 
   return (
@@ -47,7 +47,7 @@ export default function PlanTable({ plan, onHoursChange, busy }) {
               </thead>
               <tbody>
                 {plan.items.map((item) => (
-                  <PlanRow key={item.id} item={item} onHoursChange={onHoursChange} busy={busy} />
+                  <PlanRow key={item.id} item={item} isSaved={isSaved} onHoursChange={onHoursChange} busy={busy} />
                 ))}
               </tbody>
             </table>
@@ -75,13 +75,14 @@ export default function PlanTable({ plan, onHoursChange, busy }) {
   );
 }
 
-function PlanRow({ item, onHoursChange, busy }) {
+function PlanRow({ item, isSaved, onHoursChange, busy }) {
   const TypeIcon = getTypeIcon(item.type);
   const hours = item.hoursPerDay;
+  const showReduction = item.isReduced && !isSaved;
   const minimum = item.isMustHave ? Math.min(0.5, item.maxHoursPerDay) : 0;
 
   return (
-    <tr className={cn("border-b border-border last:border-0", item.isReduced && "bg-warning-soft")}>
+    <tr className={cn("border-b border-border last:border-0", showReduction && "bg-warning-soft")}>
       <td className="px-2 py-3">
         <div className="flex items-center gap-3">
           <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
@@ -116,7 +117,7 @@ function PlanRow({ item, onHoursChange, busy }) {
           >
             <Plus />
           </Button>
-          {item.isReduced && (
+          {showReduction && (
             <span className="text-xs text-warning">was {formatNumber(item.originalHours)}h</span>
           )}
         </div>
