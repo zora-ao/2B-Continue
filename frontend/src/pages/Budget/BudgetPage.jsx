@@ -20,6 +20,7 @@ export default function BudgetPage() {
 
   const [planner, setPlanner] = useState(null);
   const [plan, setPlan] = useState(null);
+  const [isPlanSaved, setIsPlanSaved] = useState(false);
   const [budget, setBudget] = useState("");
   const [style, setStyle] = useState("balanced");
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ export default function BudgetPage() {
       .then((data) => {
         setPlanner(data);
         showPlan(data.savedPlan && !data.savedPlan.isStale ? data.savedPlan.plan : data.preview);
+        setIsPlanSaved(Boolean(data.savedPlan && !data.savedPlan.isStale));
       })
       .catch((err) => {
         if (err.name !== "AbortError") setError(err.message);
@@ -51,6 +53,7 @@ export default function BudgetPage() {
   }, [householdId, reloadCount]);
 
   function showPlan(newPlan) {
+    setIsPlanSaved(false);
     setPlan(newPlan);
     setBudget(String(newPlan.budget));
     setStyle(newPlan.style);
@@ -99,6 +102,7 @@ export default function BudgetPage() {
         adjustments: currentAdjustments(id, hours),
       });
       setPlan(updated.plan);
+      setIsPlanSaved(false);
       setPlanner((current) => ({ ...current, preview: updated.preview, savedPlan: updated.savedPlan }));
     });
   }
@@ -113,6 +117,7 @@ export default function BudgetPage() {
       });
       setPlanner({ ...planner, savedPlan });
       showPlan(savedPlan.plan);
+      setIsPlanSaved(true);
       showToast("Plan saved for this month.");
     });
   }
@@ -194,7 +199,7 @@ export default function BudgetPage() {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-6">
-              <PlanTable plan={plan} onHoursChange={handleHoursChange} busy={busy} />
+              <PlanTable plan={plan} isSaved={isPlanSaved} onHoursChange={handleHoursChange} busy={busy} />
               <BudgetTips tips={plan.tips} />
             </div>
           </div>
